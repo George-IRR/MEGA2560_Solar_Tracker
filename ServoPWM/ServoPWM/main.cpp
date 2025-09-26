@@ -10,6 +10,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+const uint16_t MAX_SERVO_DEGREE = 300; // type safe
+
 static inline void initServo(void)
 {
 	//sets Timer4 registers
@@ -38,59 +40,39 @@ static inline void initServo(void)
 
 void sendAngle(uint16_t angle)
 {
+	//clamp values
+	if(angle < 0) angle = 0;
+	if(angle > MAX_SERVO_DEGREE) angle = MAX_SERVO_DEGREE;
 	
-	OCR4C=(angle*13.33)+1000;
+	//0.5ms = 1000 ticks, 2.5ms = 5000 ticks
+	OCR4C = (angle * ((5000-1000)/MAX_SERVO_DEGREE)) + 1000;
 }
-#define BLINK_DELAY 500
 
+#define BLINK_DELAY 500
 void blink()
 {
 	DDRB |= (1 << PB7);
-	PORTB |= (1 << PB7);   // LED on
-	_delay_ms(BLINK_DELAY);    // Delay (if time_ms is constant or small)
-	PORTB &= ~(1 << PB7);  // LED off
+	PORTB |= (1 << PB7);	// LED on
+	_delay_ms(BLINK_DELAY);    // Delay (BLINK_DELAY is constant or small)
+	PORTB &= ~(1 << PB7);	// LED off
 	_delay_ms(BLINK_DELAY);
 }
 
 int main(void)
 {
-	initServo();
-	//sendAngle(0);
+	while(1){
+		initServo();
+		sendAngle(0);
+		_delay_ms(2500);
+		blink();
 
-	// 	while (1)
-	// 	{
-	// 	sendAngle(0);
-	// 		for(int i=0; i<=360; i+=5)
-	// 		{
-	// 			_delay_ms(100);
-	// 			sendAngle(i);
-	// 		}
-	//
-	//
-	// 	}
-	while (1)
-	{
-	
-		blink(500);
+		sendAngle(250);
+		_delay_ms(2500);
+		blink();
+		
 		sendAngle(300);
-		_delay_ms(1000);
-
-		blink(500);
-		blink(500);
-		sendAngle(310);
-		_delay_ms(1000);
-
-		sendAngle(320);
-		_delay_ms(1000);
-
-		sendAngle(330);
-		_delay_ms(1000);
-
-		sendAngle(340);
-		_delay_ms(1000);
-
-		sendAngle(350);
-		_delay_ms(1000);
+		_delay_ms(2500);
+		blink();		
 	}
 }
 
