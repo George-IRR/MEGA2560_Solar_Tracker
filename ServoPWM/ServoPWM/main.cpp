@@ -10,9 +10,11 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
+#include "ADC.h"
+
 const uint16_t MAX_SERVO_DEGREE = 300; // type safe
 
-static inline void initServo(void)
+static inline void SERVO_init(void)
 {
 	//sets Timer4 registers
 	TCCR4A |= (1<<WGM41);
@@ -58,21 +60,37 @@ void blink()
 	_delay_ms(BLINK_DELAY);
 }
 
+uint16_t analogValue0 = 0;
+
 int main(void)
 {
+// 	while(1){
+// 		SERVO_init();
+// 		sendAngle(0);
+// 		_delay_ms(2500);
+// 		blink();
+// 
+// 		sendAngle(250);
+// 		_delay_ms(2500);
+// 		blink();
+// 		
+// 		sendAngle(300);
+// 		_delay_ms(2500);
+// 		blink();		
+// 	}
+	sendAngle(0);
 	while(1){
-		initServo();
-		sendAngle(0);
-		_delay_ms(2500);
-		blink();
-
-		sendAngle(250);
-		_delay_ms(2500);
-		blink();
+		SERVO_init();
+		ADC_init();
 		
-		sendAngle(300);
-		_delay_ms(2500);
-		blink();		
+		analogValue0 = ADC_read();
+		//_delay_ms(5);
+// 		if (analogValue0>500) sendAngle(300);
+// 		else sendAngle(0);
+
+		uint16_t servoDegrees = (0.29296875) * analogValue0;
+		//uint16_t servoDegrees = 50;
+		sendAngle(servoDegrees);
 	}
 }
 
