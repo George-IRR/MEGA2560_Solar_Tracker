@@ -38,24 +38,59 @@ static inline void initServo(void)
 
 void sendAngle(uint16_t angle)
 {
-	OCR4C=(angle*22.22)+1000;
+	
+	OCR4C=(angle*13.33)+1000;
 }
+#define BLINK_DELAY 500
+
+void blink()
+{
+	DDRB |= (1 << PB7);
+	PORTB |= (1 << PB7);   // LED on
+	_delay_ms(BLINK_DELAY);    // Delay (if time_ms is constant or small)
+	PORTB &= ~(1 << PB7);  // LED off
+	_delay_ms(BLINK_DELAY);
+}
+
 int main(void)
 {
 	initServo();
-	sendAngle(0);
-	
+	//sendAngle(0);
+
+	// 	while (1)
+	// 	{
+	// 	sendAngle(0);
+	// 		for(int i=0; i<=360; i+=5)
+	// 		{
+	// 			_delay_ms(100);
+	// 			sendAngle(i);
+	// 		}
+	//
+	//
+	// 	}
 	while (1)
 	{
-	sendAngle(0);
-		for(int i=0; i<=200; i+=10)
-		{
-			_delay_ms(500);
-			sendAngle(i);
-		}
+	
+		blink(500);
+		sendAngle(300);
+		_delay_ms(1000);
 
+		blink(500);
+		blink(500);
+		sendAngle(310);
+		_delay_ms(1000);
 
+		sendAngle(320);
+		_delay_ms(1000);
+
+		sendAngle(330);
+		_delay_ms(1000);
+
+		sendAngle(340);
+		_delay_ms(1000);
+
+		sendAngle(350);
+		_delay_ms(1000);
 	}
-
 }
 
