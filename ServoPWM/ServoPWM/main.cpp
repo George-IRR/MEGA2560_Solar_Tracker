@@ -88,7 +88,7 @@ int main(void)
 // 		if (analogValue0>500) sendAngle(300);
 // 		else sendAngle(0);
 
-		uint16_t servoDegrees = (0.29296875) * analogValue0;
+		uint16_t servoDegrees = (0.29296875) * analogValue0; // (1024/300) * analogValue0
 		//uint16_t servoDegrees = 50;
 		sendAngle(servoDegrees);
 	}
