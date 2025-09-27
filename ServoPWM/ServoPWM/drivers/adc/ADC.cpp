@@ -13,7 +13,9 @@ void ADC_init(void){
 	ADCSRA = (1<<ADEN) | (1<<ADPS2) | (1<<ADPS1); //Enable ADC
 }
 
-uint16_t ADC_read(void){
+uint16_t ADC_read(uint8_t channel)
+{
+	ADMUX = (ADMUX & 0b11110000) | (channel & 0b00001111);
 	ADCSRA |= (1<<ADSC); //ADC Start Conversion
 	while(ADCSRA & (1<<ADSC)); //wait until ADC reading is complete to perform the next one
 	return ADC;

@@ -10,7 +10,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#include "ADC.h"
+#include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
 
 #define BLINK_DELAY 500
@@ -46,7 +46,7 @@ int main(void)
 		SERVO_init();
 		ADC_init();
 		
-		analogValue0 = ADC_read();
+		analogValue0 = ADC_read(0);
 		//_delay_ms(5);
 // 		if (analogValue0>500) sendAngle(300);
 // 		else sendAngle(0);
