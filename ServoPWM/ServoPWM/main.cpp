@@ -24,7 +24,9 @@ void blink()
 }
 
 uint16_t analogValue0 = 0;
+uint16_t analogValue1 = 0;
 
+uint16_t angle = 200;
 int main(void)
 {
 // 	while(1){
@@ -41,19 +43,64 @@ int main(void)
 // 		_delay_ms(2500);
 // 		blink();		
 // 	}
-	sendAngle(0);
+	sendAngle(angle);
 	while(1){
 		SERVO_init();
 		ADC_init();
 		
 		analogValue0 = ADC_read(0);
-		//_delay_ms(5);
+		analogValue1 = ADC_read(1);
+
+
+		if(analogValue0>analogValue1) //&& angle <= MAX_SERVO_DEGREE && angle >= 0) 
+		{
+			if(angle<MAX_SERVO_DEGREE) 
+			sendAngle(angle++);
+		
+		}
+		else if(analogValue0<analogValue1)// && angle >= 0 && angle <= MAX_SERVO_DEGREE) 
+		{
+			if(angle>0)
+			sendAngle(angle--);
+			
+		}
+// 		else if (!(angle >= 0 && angle <= MAX_SERVO_DEGREE))
+// 		{
+// 			blink();
+// 		}
+		_delay_ms(5);
+		
+		
+// 		do
+// 		{
+// 			angle++;
+// 			sendAngle(angle);
+// 		}
+// 		while(analogValue0>=analogValue1);
+// 		
+// 		do
+// 		{
+// 			angle--;
+// 			sendAngle(angle);
+// 					analogValue0 = ADC_read(0);
+// 					analogValue1 = ADC_read(1);
+// 		}
+// 		while(analogValue0<=analogValue1);
+		
+		
+		
+		
+
+		//for(uint16_t i=200;i>=analogValue1;i++) sendAngle(i);
+		//_delay_ms(100);
 // 		if (analogValue0>500) sendAngle(300);
 // 		else sendAngle(0);
 
-		uint16_t servoDegrees = (0.29296875) * analogValue0; // (1024/300) * analogValue0
+
+
+		//uint16_t servoDegrees = (0.29296875) * analogValue0; // (1024/300) * analogValue0
 		//uint16_t servoDegrees = 50;
-		sendAngle(servoDegrees);
+		//sendAngle(servoDegrees);
 	}
 }
 
