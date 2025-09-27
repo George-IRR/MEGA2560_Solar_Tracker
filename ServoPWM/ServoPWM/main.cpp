@@ -9,6 +9,7 @@
 #define F_CPU 16000000UL 
 #include <avr/io.h>
 #include <util/delay.h>
+#include <stdlib.h>     /* abs */
 
 #include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
@@ -26,9 +27,11 @@ void blink()
 uint16_t analogValue0 = 0;
 uint16_t analogValue1 = 0;
 
-uint16_t angle = 200;
+uint16_t angle = 180;
 int main(void)
 {
+	SERVO_init();
+	ADC_init();
 // 	while(1){
 // 		SERVO_init();
 // 		sendAngle(0);
@@ -45,8 +48,8 @@ int main(void)
 // 	}
 	sendAngle(angle);
 	while(1){
-		SERVO_init();
-		ADC_init();
+		
+		
 		
 		analogValue0 = ADC_read(0);
 		analogValue1 = ADC_read(1);
@@ -54,21 +57,24 @@ int main(void)
 
 		if(analogValue0>analogValue1) //&& angle <= MAX_SERVO_DEGREE && angle >= 0) 
 		{
-			if(angle<MAX_SERVO_DEGREE) 
-			sendAngle(angle++);
+			if(angle<MAX_SERVO_DEGREE) sendAngle(angle++);
 		
 		}
 		else if(analogValue0<analogValue1)// && angle >= 0 && angle <= MAX_SERVO_DEGREE) 
 		{
-			if(angle>0)
-			sendAngle(angle--);
+			if(angle>0) sendAngle(angle--);
 			
 		}
+		else if(abs(analogValue0-analogValue1)<400) //tolerance
+		{
+			blink();
+		}
+
 // 		else if (!(angle >= 0 && angle <= MAX_SERVO_DEGREE))
 // 		{
 // 			blink();
 // 		}
-		_delay_ms(5);
+		_delay_ms(10);
 		
 		
 // 		do
