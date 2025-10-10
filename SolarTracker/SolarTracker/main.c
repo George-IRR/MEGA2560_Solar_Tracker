@@ -65,12 +65,12 @@ void solarTrack(){
 
 int main(void)
 {
-	USART_init(9600);
+	USART_init(&USART0_regs, 9600);
 	char rx_buffer[32];
 
 	while (1)
 	{
-		USART_Receive_String(rx_buffer, sizeof(rx_buffer));
+		USART_Receive_String(&USART0_regs, rx_buffer, sizeof(rx_buffer));
 		
 		//both NL & CR
 		if (strcmp(rx_buffer, "/blink")  == 0) 
