@@ -13,6 +13,7 @@
 
 #include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
+#include "drivers/uart/UART.h"
 
 #define BLINK_DELAY 500
 void blink()
@@ -28,39 +29,22 @@ uint16_t analogValue0 = 0;
 uint16_t analogValue1 = 0;
 
 uint16_t angle = 180;
-int main(void)
-{
+
+void solarTrack(){
 	SERVO_init();
 	ADC_init();
-// 	while(1){
-// 		SERVO_init();
-// 		sendAngle(0);
-// 		_delay_ms(2500);
-// 		blink();
-// 
-// 		sendAngle(250);
-// 		_delay_ms(2500);
-// 		blink();
-// 		
-// 		sendAngle(300);
-// 		_delay_ms(2500);
-// 		blink();		
-// 	}
 	sendAngle(angle);
 	while(1){
-		
-		
-		
 		analogValue0 = ADC_read(0);
 		analogValue1 = ADC_read(1);
 
 
-		if(analogValue0>analogValue1) //&& angle <= MAX_SERVO_DEGREE && angle >= 0) 
+		if(analogValue0>analogValue1) 
 		{
 			if(angle<MAX_SERVO_DEGREE) sendAngle(angle++);
 		
 		}
-		else if(analogValue0<analogValue1)// && angle >= 0 && angle <= MAX_SERVO_DEGREE) 
+		else if(analogValue0<analogValue1)
 		{
 			if(angle>0) sendAngle(angle--);
 			
@@ -70,43 +54,19 @@ int main(void)
 			blink();
 		}
 
-// 		else if (!(angle >= 0 && angle <= MAX_SERVO_DEGREE))
-// 		{
-// 			blink();
-// 		}
 		_delay_ms(10);
 		
-		
-// 		do
-// 		{
-// 			angle++;
-// 			sendAngle(angle);
-// 		}
-// 		while(analogValue0>=analogValue1);
-// 		
-// 		do
-// 		{
-// 			angle--;
-// 			sendAngle(angle);
-// 					analogValue0 = ADC_read(0);
-// 					analogValue1 = ADC_read(1);
-// 		}
-// 		while(analogValue0<=analogValue1);
-		
-		
-		
-		
-
-		//for(uint16_t i=200;i>=analogValue1;i++) sendAngle(i);
-		//_delay_ms(100);
-// 		if (analogValue0>500) sendAngle(300);
-// 		else sendAngle(0);
+	}
+}
 
 
-
-		//uint16_t servoDegrees = (0.29296875) * analogValue0; // (1024/300) * analogValue0
-		//uint16_t servoDegrees = 50;
-		//sendAngle(servoDegrees);
+int main(void)
+{
+//	solarTrack();
+	while(1)
+	{
+		UART_init(9600);
+		printString("hello");
 	}
 }
 
