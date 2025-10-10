@@ -66,14 +66,23 @@ void solarTrack(){
 int main(void)
 {
 	USART_init(&USART0_regs, 9600);
-	char rx_buffer[32];
-
-	while (1)
-	{
-		USART_Receive_String(&USART0_regs, rx_buffer, sizeof(rx_buffer));
-		
-		//both NL & CR
-		if (strcmp(rx_buffer, "/blink")  == 0) 
-			blink();
-	}
+	USART_init(&USART1_regs, 9600);
+	char rx_buffer[64];
+	
+	printString(&USART1_regs, "AT+VERSION");
+	USART_Receive_String(&USART1_regs, rx_buffer, sizeof(rx_buffer));
+	
+	printString(&USART0_regs, rx_buffer);
+	printString(&USART0_regs, "\n");
+	
+// 	while (1)
+// 	{
+// 		USART_Receive_String(&USART1_regs, rx_buffer, sizeof(rx_buffer));
+// 		
+// 		//both NL & CR
+// 		if (strcmp(rx_buffer, "/blink")  == 0) 
+// 			blink();
+// 
+// 
+// 	}
 }
