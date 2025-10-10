@@ -4,16 +4,19 @@
  * Created: 9/18/2025 6:39:15 PM
  * Author : George
  * 
+ * avrdude -c wiring -p atmega2560 -P COM4 -b 115200 -D -U flash:w:"MEGA2560_Baremetal\SolarTracker\SolarTracker\Debug\SolarTracker.hex":i
+ *
  */ 
 
 #define F_CPU 16000000UL 
 #include <avr/io.h>
 #include <util/delay.h>
 #include <stdlib.h>     /* abs */
+#include <string.h>		/* strcmp */
 
 #include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
-#include "drivers/uart/UART.h"
+#include "drivers/usart/USART.h"
 
 #define BLINK_DELAY 500
 void blink()
@@ -62,11 +65,15 @@ void solarTrack(){
 
 int main(void)
 {
-//	solarTrack();
-	while(1)
+	USART_init(9600);
+	char rx_buffer[32];
+
+	while (1)
 	{
-		UART_init(9600);
-		printString("hello");
+		USART_Receive_String(rx_buffer, sizeof(rx_buffer));
+		
+		//both NL & CR
+		if (strcmp(rx_buffer, "/blink")  == 0) 
+			blink();
 	}
 }
-
