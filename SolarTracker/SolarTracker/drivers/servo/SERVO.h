@@ -2,7 +2,7 @@
 #define SERVO_H_
 
 
-const uint16_t MAX_SERVO_DEGREE = 300; // type safe
+#define MAX_SERVO_DEGREE 300
 
 void SERVO_init(void); 
 
