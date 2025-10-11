@@ -14,6 +14,7 @@ typedef struct {
 	uint8_t ucsz1;
 	uint8_t udre;
 	uint8_t rxc;
+	uint8_t rxcie;
 } USART_t;
 
 
