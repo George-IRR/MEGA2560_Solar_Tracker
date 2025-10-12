@@ -85,11 +85,19 @@ ISR(USART0_RX_vect) //Interrupt PC Serial receive
 	{
 		if (data == '\r' || data == '\n') 
 		{
-			if(rx0_buf[0]=='A' && rx0_buf[1]=='T' && rx0_buf[2]=='+')
+			char *BT_COMMAND = strstr(rx0_buf,"AT"); 
+			if(BT_COMMAND != NULL)
 			{				
 				//send command & message
-				printString(&USART1_regs, rx0_buf);
+				printString(&USART1_regs, BT_COMMAND);
 				
+				/* //DEBUG, if you leave 19200 baud it will not show the whole UART response from BT module
+				printString(&USART0_regs, "\n Command sent: ");
+				printString(&USART0_regs, BT_COMMAND);
+				printString(&USART0_regs, "\n Found from the array: ");
+				printString(&USART0_regs, rx0_buf);
+				printString(&USART0_regs, "\n");
+				*/
 				// Clear buffer and reset index
 				memset(rx0_buf, 0, sizeof(rx0_buf));
 				rx0_index = 0;
