@@ -5,32 +5,32 @@
 
 USART_t USART0_regs = {
 	&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0,
-	TXEN0, RXEN0, UCSZ00, UCSZ01, UDRE0, RXC0
+	TXEN0, RXEN0, UCSZ00, UCSZ01, UDRE0, RXC0, RXCIE0
 };
 USART_t USART1_regs = {
 	&UBRR1H, &UBRR1L, &UCSR1A, &UCSR1B, &UCSR1C, &UDR1,
-	TXEN1, RXEN1, UCSZ10, UCSZ11, UDRE1, RXC1
+	TXEN1, RXEN1, UCSZ10, UCSZ11, UDRE1, RXC1, RXCIE1
 };
 USART_t USART2_regs = {
 	&UBRR2H, &UBRR2L, &UCSR2A, &UCSR2B, &UCSR2C, &UDR2,
-	TXEN2, RXEN2, UCSZ20, UCSZ21, UDRE2, RXC2
+	TXEN2, RXEN2, UCSZ20, UCSZ21, UDRE2, RXC2, RXCIE2
 };
 USART_t USART3_regs = {
 	&UBRR3H, &UBRR3L, &UCSR3A, &UCSR3B, &UCSR3C, &UDR3,
-	TXEN3, RXEN3, UCSZ30, UCSZ31, UDRE3, RXC3
+	TXEN3, RXEN3, UCSZ30, UCSZ31, UDRE3, RXC3, RXCIE3
 };
 
 void USART_init(USART_t *usart, uint32_t baud){
+	SREG = (1 << SREG_I); //interrupt global variable enable
+	
 	uint16_t ubrr_value = (F_CPU/(16UL*baud))-1;
 	
 	*(usart->ubrrh) = (uint8_t)(ubrr_value >> 8);
 	*(usart->ubrrl) = (uint8_t)(ubrr_value);
 	
 	*(usart->ucsrb)  = (1<<usart->txen);  //TX Enable
-	*(usart->ucsrb) |= (1<<usart->rxen);  //RX Enable
+	*(usart->ucsrb) |= (1<<usart->rxen) | (1 << usart->rxcie) ;  //RX Enable, RX Interrupt Enable
 	*(usart->ucsrc) = (1<<usart->ucsz1) | (1<<usart->ucsz0); //8 data bits
-
-	
 }
 
 void USART_sendBtye(USART_t *usart, uint8_t data){
