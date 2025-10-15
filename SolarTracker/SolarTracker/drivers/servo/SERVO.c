@@ -1,6 +1,13 @@
 #include <avr/io.h>
 #include "SERVO.h"
 
+PWM4_t PWM4_C_regs = {
+	&OCR4C //PH5
+};
+PWM4_t PWM4_B_regs = {
+	&OCR4B //PH4
+};
+
 void SERVO_init(void)
 {
 	//sets Timer4 registers
@@ -27,12 +34,12 @@ void SERVO_init(void)
 	DDRH |= (1<<PH5);
 }
 
-void sendAngle(uint16_t angle)
+void sendAngle(PWM4_t *pwm_pin, uint16_t angle)
 {
 	//clamp values
 	if(angle < 0) angle = 0;
 	if(angle > MAX_SERVO_DEGREE) angle = MAX_SERVO_DEGREE;
 	
 	//0.5ms = 1000 ticks, 2.5ms = 5000 ticks
-	OCR4C = (angle * ((5000-1000)/MAX_SERVO_DEGREE)) + 1000;
+	*(pwm_pin->ocrc) = (angle * ((5000-1000)/MAX_SERVO_DEGREE)) + 1000;
 }

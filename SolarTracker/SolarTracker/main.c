@@ -46,7 +46,7 @@ uint16_t angle = 180;
 void solarTrack(){
 	SERVO_init();
 	ADC_init();
-	sendAngle(angle);
+	sendAngle(&PWM4_C_regs, angle);
 	while(1){
 		analogValue0 = ADC_read(0);
 		analogValue1 = ADC_read(1);
@@ -54,12 +54,12 @@ void solarTrack(){
 
 		if(analogValue0>analogValue1) 
 		{
-			if(angle<MAX_SERVO_DEGREE) sendAngle(angle++);
+			if(angle<MAX_SERVO_DEGREE) sendAngle(&PWM4_C_regs, angle++);
 		
 		}
 		else if(analogValue0<analogValue1)
 		{
-			if(angle>0) sendAngle(angle--);
+			if(angle>0) sendAngle(&PWM4_C_regs, angle--);
 			
 		}
 		else if(abs(analogValue0-analogValue1)<400) //tolerance
@@ -182,8 +182,21 @@ int main(void)
 	USART_init(&USART0_regs, 19200);
 	USART_init(&USART1_regs, 9600);
 
+	SERVO_init();
 	while(1)
 	{
+		sendAngle(&PWM4_C_regs,0);
+		sendAngle(&PWM4_B_regs,0);
+		_delay_ms(1500);
+				
+		sendAngle(&PWM4_C_regs,150);		
+		sendAngle(&PWM4_B_regs,150);
+		_delay_ms(1500);
 		
+		sendAngle(&PWM4_C_regs,300);	
+		sendAngle(&PWM4_B_regs,300);
+		_delay_ms(1500);
+		
+		blink_short();
 	}
 }
