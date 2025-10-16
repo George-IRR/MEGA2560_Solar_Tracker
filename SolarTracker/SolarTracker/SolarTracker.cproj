@@ -162,6 +162,12 @@
     <Compile Include="drivers\servo\SERVO.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="drivers\twi\TWI.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\twi\TWI.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="drivers\usart\USART.c">
       <SubType>compile</SubType>
     </Compile>
@@ -175,6 +181,7 @@
   <ItemGroup>
     <Folder Include="drivers" />
     <Folder Include="drivers\adc" />
+    <Folder Include="drivers\twi" />
     <Folder Include="drivers\usart" />
     <Folder Include="drivers\servo" />
   </ItemGroup>

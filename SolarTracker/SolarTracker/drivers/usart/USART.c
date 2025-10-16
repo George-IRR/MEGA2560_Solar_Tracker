@@ -1,5 +1,7 @@
 #include <avr/io.h>
 #include <stdlib.h>
+#include <stdio.h>
+
 #include "USART.h"
 #define F_CPU 16000000UL
 
@@ -78,4 +80,29 @@ void USART_Receive_String(USART_t *usart, char* string_buffer, uint8_t size)
 		string_buffer[i++]= received_char;
 	}
 	string_buffer[i] = '\0';
+}
+
+
+void printHex(USART_t *usart, uint8_t value)
+{
+	char hex[3];
+	static const char hex_chars[] = "0123456789ABCDEF"; // keep in flash 
+	
+	hex[0] = hex_chars[value >> 4];    // High nibble
+	hex[1] = hex_chars[value & 0x0F];  // Low nibble
+	hex[2] = '\0';
+	
+	printString(usart, hex);
+}
+
+void printFloat(USART_t *usart, float value)
+{
+	char buffer[16];
+	int integer_part = (int)value;
+	int decimal_part = (int)((value - integer_part) * 100);
+	
+	if (decimal_part < 0) decimal_part = -decimal_part;
+	
+	snprintf(buffer, sizeof(buffer), "%d.%02d", integer_part, decimal_part);
+	printString(usart, buffer);
 }

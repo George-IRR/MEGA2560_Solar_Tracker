@@ -43,4 +43,9 @@ unsigned char USART_Receive       (USART_t *usart);
 
 void USART_Receive_String(USART_t *usart, char* string_buffer, uint8_t size);
 
+void printHex(USART_t *usart, uint8_t value);
+
+void printFloat(USART_t *usart, float value);
+
+
 #endif /* USART_H_ */

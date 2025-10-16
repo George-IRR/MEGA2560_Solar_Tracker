@@ -18,6 +18,7 @@
 #include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
 #include "drivers/usart/USART.h"
+#include "drivers/twi/TWI.h"
 
 
 #define BLINK_DELAY 500
@@ -177,26 +178,80 @@ ISR(USART1_RX_vect) //Interrupt Bluetooth receive
 	}
 }
 
+void getDHT20_Data(uint8_t data[7])
+{
+	//Trigger measurement
+	TWI_start();
+	TWI_write(0x70);  // DHT20 write address (0x38 << 1)
+	TWI_write(0xAC);  // Trigger command
+	TWI_write(0x33);
+	TWI_write(0x00);
+	TWI_stop();
+	
+	_delay_ms(80);    // Wait for measurement (minimum 80ms)
+	
+	//Read data
+	TWI_start();
+	TWI_write(0x71);  // DHT20 read address (0x38<<1 | 1)
+	
+	data[0] = TWI_read_ack();   // Status byte
+	data[1] = TWI_read_ack();   // Humidity[19:12]
+	data[2] = TWI_read_ack();   // Humidity[11:4]
+	data[3] = TWI_read_ack();   // Hum[3:0]|Temp[19:16]
+	data[4] = TWI_read_ack();   // Temperature[15:8]
+	data[5] = TWI_read_ack();   // Temperature[7:0]
+	data[6] = TWI_read_nack();  // CRC-8
+	
+	TWI_stop();
+}
+
 int main(void)
 {
 	USART_init(&USART0_regs, 19200);
 	USART_init(&USART1_regs, 9600);
-
-	SERVO_init();
+	
+	TWI_init();
+	uint8_t data[7];
+	_delay_ms(100);  // Wait for DHT20 power-up
+	
 	while(1)
 	{
-		sendAngle(&PWM4_C_regs,0);
-		sendAngle(&PWM4_B_regs,0);
-		_delay_ms(1500);
-				
-		sendAngle(&PWM4_C_regs,150);		
-		sendAngle(&PWM4_B_regs,150);
-		_delay_ms(1500);
+		getDHT20_Data(data);
+		// Extract 20-bit values
+		uint32_t raw_humidity = ((uint32_t)data[1] << 12) |
+								((uint32_t)data[2] << 4) |
+								((uint32_t)data[3] >> 4);
+
+		uint32_t raw_temp = (((uint32_t)data[3] & 0x0F) << 16) |
+								((uint32_t)data[4] << 8) |
+								((uint32_t)data[5]);
+
+		// Convert to actual values
+		float humidity = (raw_humidity * 100.0) / 1048576.0;
+		float temperature = ((raw_temp * 200.0) / 1048576.0) - 50.0;
+	
+		/*
+		// Print results
+		printString(&USART0_regs, "Status: 0x");
+		printHex(&USART0_regs, data[0]);
+		printString(&USART0_regs, "\r\n");
 		
-		sendAngle(&PWM4_C_regs,300);	
-		sendAngle(&PWM4_B_regs,300);
-		_delay_ms(1500);
+		// For now, print raw bytes
+		printString(&USART0_regs, "Data: ");
+		for(int i = 0; i < 7; i++) {
+			printHex(&USART0_regs, data[i]);
+			printString(&USART0_regs, " ");
+		}
+		*/
 		
-		blink_short();
+		printString(&USART1_regs, "\n Humidity: \n");
+		printFloat(&USART1_regs, humidity);
+		printString(&USART1_regs, "\n Temperature: \n");
+		printFloat(&USART1_regs, temperature);
+
+	
+		printString(&USART1_regs, "\r\n\r\n");
+	
+		_delay_ms(2000);  // Read every 2 seconds
 	}
 }
