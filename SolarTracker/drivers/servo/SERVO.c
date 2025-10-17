@@ -2,10 +2,16 @@
 #include "SERVO.h"
 
 PWM4_t PWM4_C_regs = {
-	&OCR4C //PH5
+	&OCR4C, //PH5
+	300,
+	0,
+	300,
 };
 PWM4_t PWM4_B_regs = {
-	&OCR4B //PH4
+	&OCR4B, //PH4
+	180,
+	130,	// Safest max degrees
+	175		// It cannot go lower or higher because it will break the 3D print holder
 };
 
 void SERVO_init(void)
@@ -30,16 +36,16 @@ void SERVO_init(void)
 	*/
 	ICR4=40000;
 	
-	TCCR4A |= (1<<COM4C1);
-	DDRH |= (1<<PH5);
+	TCCR4A |= (1<<COM4C1) | (1<<COM4B1);
+	DDRH |= (1<<PH5) | (1<<PH4);
 }
 
 void sendAngle(PWM4_t *pwm_pin, uint16_t angle)
 {
 	//clamp values
-	if(angle < 0) angle = 0;
-	if(angle > MAX_SERVO_DEGREE) angle = MAX_SERVO_DEGREE;
+	if(angle < pwm_pin->low_limit) angle = 0;
+	if(angle > (pwm_pin->high_limit) ) angle = (pwm_pin->high_limit);
 	
 	//0.5ms = 1000 ticks, 2.5ms = 5000 ticks
-	*(pwm_pin->ocrc) = (angle * ((5000-1000)/MAX_SERVO_DEGREE)) + 1000;
+	*(pwm_pin->ocrc) = (angle * ((5000-1000)/ (pwm_pin->max_degree) )) + 1000;
 }

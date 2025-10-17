@@ -92,6 +92,9 @@ ISR(USART0_RX_vect) //Interrupt PC Serial receive
 				//send command & message
 				printString(&USART1_regs, BT_COMMAND);
 				
+				printString(&USART0_regs, "\n Command sent: ");
+				printString(&USART0_regs, BT_COMMAND);	
+				printString(&USART0_regs, "\n");			
 				/* //DEBUG, if you leave 19200 baud it will not show the whole UART response from BT module
 				printString(&USART0_regs, "\n Command sent: ");
 				printString(&USART0_regs, BT_COMMAND);
@@ -205,53 +208,94 @@ void getDHT20_Data(uint8_t data[7])
 	TWI_stop();
 }
 
+//
 int main(void)
 {
-	USART_init(&USART0_regs, 19200);
-	USART_init(&USART1_regs, 9600);
-	
-	TWI_init();
-	uint8_t data[7];
-	_delay_ms(100);  // Wait for DHT20 power-up
-	
+	USART_init(&USART0_regs, 57600);
+	USART_init(&USART1_regs, 38400);
+	SERVO_init();
 	while(1)
 	{
-		getDHT20_Data(data);
-		// Extract 20-bit values
-		uint32_t raw_humidity = ((uint32_t)data[1] << 12) |
-								((uint32_t)data[2] << 4) |
-								((uint32_t)data[3] >> 4);
-
-		uint32_t raw_temp = (((uint32_t)data[3] & 0x0F) << 16) |
-								((uint32_t)data[4] << 8) |
-								((uint32_t)data[5]);
-
-		// Convert to actual values
-		float humidity = (raw_humidity * 100.0) / 1048576.0;
-		float temperature = ((raw_temp * 200.0) / 1048576.0) - 50.0;
-	
-		/*
-		// Print results
-		printString(&USART0_regs, "Status: 0x");
-		printHex(&USART0_regs, data[0]);
-		printString(&USART0_regs, "\r\n");
+		sendAngle(&PWM4_C_regs,0);
+		_delay_ms(200);
+		sendAngle(&PWM4_B_regs,130);
 		
-		// For now, print raw bytes
-		printString(&USART0_regs, "Data: ");
-		for(int i = 0; i < 7; i++) {
-			printHex(&USART0_regs, data[i]);
-			printString(&USART0_regs, " ");
-		}
-		*/
+		_delay_ms(1000);
 		
-		printString(&USART1_regs, "\n Humidity: \n");
-		printFloat(&USART1_regs, humidity);
-		printString(&USART1_regs, "\n Temperature: \n");
-		printFloat(&USART1_regs, temperature);
+		sendAngle(&PWM4_C_regs,90);
+		_delay_ms(200);
+		sendAngle(&PWM4_B_regs,140);
+		
+		_delay_ms(1000);
 
-	
-		printString(&USART1_regs, "\r\n\r\n");
-	
-		_delay_ms(2000);  // Read every 2 seconds
+		sendAngle(&PWM4_C_regs,180);
+		_delay_ms(200);
+		sendAngle(&PWM4_B_regs,150);
+		
+		_delay_ms(1000);
+
+		sendAngle(&PWM4_C_regs,300);
+		_delay_ms(200);
+		sendAngle(&PWM4_B_regs,175);
+		
+		_delay_ms(1000);
 	}
 }
+
+
+// DHT20 temp and moisture data send to web server
+// working for dashboard v0.0.1
+
+// int main(void)
+// {
+// 	USART_init(&USART0_regs, 57600);
+// 	USART_init(&USART1_regs, 38400);
+// 	
+// 	TWI_init();
+// 	uint8_t data[7];
+// 	_delay_ms(100);  // Wait for DHT20 power-up
+// 	
+// 	while(1)
+// 	{
+// 		getDHT20_Data(data);
+// // 		
+// // 		// Print results
+// // 		printString(&USART1_regs, "Status: 0x");
+// // 		printHex(&USART1_regs, data[0]);
+// // 		printString(&USART1_regs, "\r\n");
+// // 		
+// 		// For now, print raw bytes
+// 		//printString(&USART1_regs, "Data: ");
+// 		for(int i = 0; i < 7; i++) {
+// 			printHex(&USART1_regs, data[i]);
+// 			//printString(&USART1_regs, " ");
+// 		}
+// 		printString(&USART1_regs, "\r\n");
+// 		/*
+// 		// Extract 20-bit values
+// 		uint32_t raw_humidity = ((uint32_t)data[1] << 12) |
+// 								((uint32_t)data[2] << 4) |
+// 								((uint32_t)data[3] >> 4);
+// 
+// 		uint32_t raw_temp = (((uint32_t)data[3] & 0x0F) << 16) |
+// 								((uint32_t)data[4] << 8) |
+// 								((uint32_t)data[5]);
+// 
+// 		// Convert to actual values
+// 		float humidity = (raw_humidity * 100.0) / 1048576.0;
+// 		float temperature = ((raw_temp * 200.0) / 1048576.0) - 50.0;
+// 	
+// 		
+// 
+// 		
+// 		printString(&USART1_regs, "\n Humidity: \n");
+// 		printFloat(&USART1_regs, humidity);
+// 		printString(&USART1_regs, "\n Temperature: \n");
+// 		printFloat(&USART1_regs, temperature);
+// 
+// 	
+// 		printString(&USART1_regs, "\r\n\r\n");
+// 		*/
+// 		_delay_ms(2000);  // Read every 2 seconds
+// 	}
+// }
