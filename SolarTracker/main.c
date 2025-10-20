@@ -14,6 +14,8 @@
 #include <stdlib.h>     /* abs */
 #include <string.h>		/* strcmp */
 #include <avr/interrupt.h> /* sreg reg*/
+//#include <stdint.h>
+#include <stdbool.h> /* bool */
 
 #include "drivers/adc/ADC.h"
 #include "drivers/servo/SERVO.h"
@@ -73,113 +75,113 @@ void solarTrack(){
 	}
 }
 
-#define RX_BUF_SIZE 64
-uint8_t rx0_index=0;
-char rx0_buf[RX_BUF_SIZE];
 
-ISR(USART0_RX_vect) //Interrupt PC Serial receive
-{
-	uint8_t data = UDR0;  // Read to clear the RXC1 flag
-
-	// Send commands to Bluetooth module
-	if (rx0_index < RX_BUF_SIZE - 1) 
-	{
-		if (data == '\r' || data == '\n') 
-		{
-			char *BT_COMMAND = strstr(rx0_buf,"AT"); 
-			if(BT_COMMAND != NULL)
-			{				
-				//send command & message
-				printString(&USART1_regs, BT_COMMAND);
-				
-				printString(&USART0_regs, "\n Command sent: ");
-				printString(&USART0_regs, BT_COMMAND);	
-				printString(&USART0_regs, "\n");			
-				/* //DEBUG, if you leave 19200 baud it will not show the whole UART response from BT module
-				printString(&USART0_regs, "\n Command sent: ");
-				printString(&USART0_regs, BT_COMMAND);
-				printString(&USART0_regs, "\n Found from the array: ");
-				printString(&USART0_regs, rx0_buf);
-				printString(&USART0_regs, "\n");
-				*/
-				// Clear buffer and reset index
-				memset(rx0_buf, 0, sizeof(rx0_buf));
-				rx0_index = 0;
-			}
-			
-		}	
-		else 
-		{
-			// Store data in buffer
-			rx0_buf[rx0_index++] = data;
-		}
-	} 
-	else 
-	{
-		// Buffer overflow handling (optional)
-		printString(&USART0_regs, "Buffer overflow\n");
-		memset(rx0_buf, 0, sizeof(rx0_buf));
-		rx0_index = 0;
-	}
-}
-
-uint8_t rx1_index=0;
-char rx1_buf[RX_BUF_SIZE];
-
-ISR(USART1_RX_vect) //Interrupt Bluetooth receive
-{
-	uint8_t data = UDR1;  // Read to clear the RXC1 flag
-
-	// Handle incoming data
-	if (rx1_index < RX_BUF_SIZE - 1) 
-	{
-		if (data == '\r' || data == '\n') 
-		{
-// 			size_t len = strlen(rx0_buf);
-// 			if (len > 0 && (rx0_buf[len - 1] == '\n' || rx0_buf[len - 1] == '\r')) {
-// 				rx0_buf[len - 1] = '\0';
+//		NEW METHOD IN usart_buffer.c
+// #define RX_BUF_SIZE 64
+// uint8_t rx0_index=0;
+// char rx0_buf[RX_BUF_SIZE];
+// 
+// ISR(USART0_RX_vect) //Interrupt PC Serial receive
+// {
+// 	uint8_t data = UDR0;  // Read to clear the RXC1 flag
+// 
+// 	// Send commands to Bluetooth module
+// 	if (rx0_index < RX_BUF_SIZE - 1) 
+// 	{
+// 		if (data == '\r' || data == '\n') 
+// 		{
+// 			char *BT_COMMAND = strstr(rx0_buf,"AT"); 
+// 			if(BT_COMMAND != NULL)
+// 			{				
+// 				//send command & message
+// 				printString(&USART1_regs, BT_COMMAND);
+// 				
+// 				printString(&USART0_regs, "\n Command sent: ");
+// 				printString(&USART0_regs, BT_COMMAND);	
+// 				printString(&USART0_regs, "\n");			
+// 				/* //DEBUG, if you leave 19200 baud it will not show the whole UART response from BT module
+// 				printString(&USART0_regs, "\n Command sent: ");
+// 				printString(&USART0_regs, BT_COMMAND);
+// 				printString(&USART0_regs, "\n Found from the array: ");
+// 				printString(&USART0_regs, rx0_buf);
+// 				printString(&USART0_regs, "\n");
+// 				*/
+// 				// Clear buffer and reset index
+// 				memset(rx0_buf, 0, sizeof(rx0_buf));
+// 				rx0_index = 0;
 // 			}
+// 			
+// 		}	
+// 		else 
+// 		{
+// 			// Store data in buffer
+// 			rx0_buf[rx0_index++] = data;
+// 		}
+// 	} 
+// 	else 
+// 	{
+// 		// Buffer overflow handling (optional)
+// 		printString(&USART0_regs, "Buffer overflow\n");
+// 		memset(rx0_buf, 0, sizeof(rx0_buf));
+// 		rx0_index = 0;
+// 	}
+// }
 
-			if( strncmp(rx1_buf, "+CONNECTING<<", 13) == 0 )
-			{
-				printString(&USART0_regs, "Bluetooth Connected to Device \n");
-				//Later add the password and maybe connect to just one address
-				printString(&USART0_regs, rx1_buf+13);
-				// OR
-				//char *Connected_BT_Address = rx1_buf+13;
-				//printString(&USART0_regs, rx1_buf+13);
-				printString(&USART0_regs, "\n");
-				
-				// Clear buffer and reset index
-				memset(rx1_buf, 0, sizeof(rx1_buf));
-				rx1_index = 0;
-			}
-			else if ( data == '\r' || data == '\n' )
-			{
-				// Process the received line
-				printString(&USART0_regs, "Received: ");
-				printString(&USART0_regs, rx1_buf);
-				printString(&USART0_regs, "\n");
 
-				// Clear buffer and reset index
-				memset(rx1_buf, 0, sizeof(rx1_buf));
-				rx1_index = 0;
-			}
-		} 
-		else 
-		{
-			// Store data in buffer
-			rx1_buf[rx1_index++] = data;
-		}
-	} 
-	else 
-	{
-		// Buffer overflow handling (optional)
-		printString(&USART0_regs, "Buffer overflow\n");
-		memset(rx1_buf, 0, sizeof(rx1_buf));
-		rx1_index = 0;
-	}
-}
+
+//TEMPORARY COMMENT
+// uint8_t rx1_index=0;
+// char rx1_buf[RX_BUF_SIZE];
+// 
+// ISR(USART1_RX_vect) //Interrupt Bluetooth receive
+// {
+// 	uint8_t data = UDR1;  // Read to clear the RXC1 flag
+// 
+// 	// Handle incoming data
+// 	if (rx1_index < RX_BUF_SIZE - 1) 
+// 	{
+// 		if (data == '\r' || data == '\n') 
+// 		{
+// 			if( strncmp(rx1_buf, "+CONNECTING<<", 13) == 0 )
+// 			{
+// 				printString(&USART0_regs, "Bluetooth Connected to Device \n");
+// 				//Later add the password and maybe connect to just one address
+// 				printString(&USART0_regs, rx1_buf+13);
+// 				// OR
+// 				//char *Connected_BT_Address = rx1_buf+13;
+// 				//printString(&USART0_regs, rx1_buf+13);
+// 				printString(&USART0_regs, "\n");
+// 				
+// 				// Clear buffer and reset index
+// 				memset(rx1_buf, 0, sizeof(rx1_buf));
+// 				rx1_index = 0;
+// 			}
+// 			else if ( data == '\r' || data == '\n' )
+// 			{
+// 				// Process the received line
+// 				printString(&USART0_regs, "Received: ");
+// 				printString(&USART0_regs, rx1_buf);
+// 				printString(&USART0_regs, "\n");
+// 
+// 				// Clear buffer and reset index
+// 				memset(rx1_buf, 0, sizeof(rx1_buf));
+// 				rx1_index = 0;
+// 			}
+// 		} 
+// 		else 
+// 		{
+// 			// Store data in buffer
+// 			rx1_buf[rx1_index++] = data;
+// 		}
+// 	} 
+// 	else 
+// 	{
+// 		// Buffer overflow handling (optional)
+// 		printString(&USART0_regs, "Buffer overflow\n");
+// 		memset(rx1_buf, 0, sizeof(rx1_buf));
+// 		rx1_index = 0;
+// 	}
+// }
 
 void getDHT20_Data(uint8_t data[7])
 {
@@ -208,40 +210,39 @@ void getDHT20_Data(uint8_t data[7])
 	TWI_stop();
 }
 
-//
+// forward declarations of the usart_buffer API from usart_buffer.c
+uint8_t uart0_available(void);
+int uart0_read(void);
+bool uart0_clear_overflow_flag(void);
+
 int main(void)
 {
 	USART_init(&USART0_regs, 57600);
-	USART_init(&USART1_regs, 38400);
-	SERVO_init();
-	while(1)
-	{
-		sendAngle(&PWM4_C_regs,0);
-		_delay_ms(200);
-		sendAngle(&PWM4_B_regs,130);
-		
-		_delay_ms(1000);
-		
-		sendAngle(&PWM4_C_regs,90);
-		_delay_ms(200);
-		sendAngle(&PWM4_B_regs,140);
-		
-		_delay_ms(1000);
+	//USART_init(&USART1_regs, 38400);
+	sei();
+	
+	uint16_t rx0_buf[16];
+    while (1) {
+	    if (uart0_available()) 
+		{
+		    int c = uart0_read();
+		    if (c >= 0) 
+			{
+				
+				printHex(&USART0_regs, (uint8_t)c);
+		    }
+	    }
 
-		sendAngle(&PWM4_C_regs,180);
-		_delay_ms(200);
-		sendAngle(&PWM4_B_regs,150);
-		
-		_delay_ms(1000);
+	    if (uart0_clear_overflow_flag()) 
+		{
+		    blink();
+			// handle overflow notification (log, blink LED, request retransmit, etc.)
+	    }
 
-		sendAngle(&PWM4_C_regs,300);
-		_delay_ms(200);
-		sendAngle(&PWM4_B_regs,175);
-		
-		_delay_ms(1000);
-	}
+	    // other non-blocking application work here
+    }
+    return 0;
 }
-
 
 // DHT20 temp and moisture data send to web server
 // working for dashboard v0.0.1
