@@ -210,38 +210,22 @@ void getDHT20_Data(uint8_t data[7])
 	TWI_stop();
 }
 
-// forward declarations of the usart_buffer API from usart_buffer.c
-uint8_t uart0_available(void);
-int uart0_read(void);
-bool uart0_clear_overflow_flag(void);
-
 int main(void)
 {
 	USART_init(&USART0_regs, 57600);
-	//USART_init(&USART1_regs, 38400);
+	USART_init(&USART1_regs, 38400);
 	sei();
 	
-	uint16_t rx0_buf[16];
-    while (1) {
-	    if (uart0_available()) 
+	while (1) {
+		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
+		blink();
+		if (uart1_clear_overflow_flag())
 		{
-		    int c = uart0_read();
-		    if (c >= 0) 
-			{
-				
-				printHex(&USART0_regs, (uint8_t)c);
-		    }
-	    }
-
-	    if (uart0_clear_overflow_flag()) 
-		{
-		    blink();
-			// handle overflow notification (log, blink LED, request retransmit, etc.)
-	    }
-
-	    // other non-blocking application work here
-    }
-    return 0;
+			// handle overflow notification
+			blink();
+		}
+	}
+	return 0;
 }
 
 // DHT20 temp and moisture data send to web server
@@ -300,3 +284,5 @@ int main(void)
 // 		_delay_ms(2000);  // Read every 2 seconds
 // 	}
 // }
+
+// definitions and globals (put near top of file)
