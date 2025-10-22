@@ -3,7 +3,7 @@
  *
  * Created: 9/18/2025 6:39:15 PM
  * Author : George
- * 
+ *
  * avrdude -c wiring -p atmega2560 -P COM4 -b 115200 -D -U flash:w:"MEGA2560_Baremetal\SolarTracker\SolarTracker\Debug\SolarTracker.hex":i
  *
  */ 
@@ -21,7 +21,9 @@
 #include "drivers/servo/SERVO.h"
 #include "drivers/usart/USART.h"
 #include "drivers/twi/TWI.h"
-
+#include "drivers/modules/DHT20.h"
+#include "drivers/usart/usart_buffer.h"
+#include "drivers/usart/usart_packet.h"
 
 #define BLINK_DELAY 500
 #define BLINK_DELAY_short 50
@@ -183,42 +185,17 @@ void solarTrack(){
 // 	}
 // }
 
-void getDHT20_Data(uint8_t data[7])
-{
-	//Trigger measurement
-	TWI_start();
-	TWI_write(0x70);  // DHT20 write address (0x38 << 1)
-	TWI_write(0xAC);  // Trigger command
-	TWI_write(0x33);
-	TWI_write(0x00);
-	TWI_stop();
-	
-	_delay_ms(80);    // Wait for measurement (minimum 80ms)
-	
-	//Read data
-	TWI_start();
-	TWI_write(0x71);  // DHT20 read address (0x38<<1 | 1)
-	
-	data[0] = TWI_read_ack();   // Status byte
-	data[1] = TWI_read_ack();   // Humidity[19:12]
-	data[2] = TWI_read_ack();   // Humidity[11:4]
-	data[3] = TWI_read_ack();   // Hum[3:0]|Temp[19:16]
-	data[4] = TWI_read_ack();   // Temperature[15:8]
-	data[5] = TWI_read_ack();   // Temperature[7:0]
-	data[6] = TWI_read_nack();  // CRC-8
-	
-	TWI_stop();
-}
 
 int main(void)
 {
 	USART_init(&USART0_regs, 57600);
 	USART_init(&USART1_regs, 38400);
 	sei();
+	TWI_init();
 	
 	while (1) {
 		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
-		blink();
+		//blink();
 		if (uart1_clear_overflow_flag())
 		{
 			// handle overflow notification

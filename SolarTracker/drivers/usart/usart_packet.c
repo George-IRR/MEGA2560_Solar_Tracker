@@ -2,7 +2,7 @@
 #include <stdbool.h>
 
 #include "USART.h"
-
+#include "../modules/DHT20.h"
 
 #define RX1_PAYLOAD_MAX 128
 
@@ -20,7 +20,7 @@ typedef enum {
 static parser_state_t pstate = WAIT_PREAMBLE_1;
 static uint8_t packet_version;
 static uint8_t packet_type;
-static uint8_t packet_seq;
+static uint8_t packet_id;
 static uint8_t packet_len;
 static uint8_t payload_buf[RX1_PAYLOAD_MAX];
 static uint8_t payload_pos;
@@ -31,8 +31,28 @@ uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
+void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
+{
+	uint8_t data[7];
+	switch (type) 
+	{
+		case 0x10: // CMD_REQ
+		getDHT20_Data(data); // example param for now AA 55 01 10 00 00 11
+		for(int i = 0; i < 7; i++)
+		 	printHex(&USART0_regs, data[i]);
+		break;
+	
+		case 0x20: // TELEMETRY
+		printHex(&USART1_regs,0XFF);
+		break;
+		
+		default:
+		// unknown type — log or ignore
+		printString(&USART0_regs, "Unknown packet type\r\n");
+		break;
+	}
+}
 
-// call this from main loop
 void process_uart1_bytes(void)
 {
 	while (uart1_available())
@@ -72,8 +92,8 @@ void process_uart1_bytes(void)
 			break;
 
 			case READ_ID:
-			packet_seq = b;
-			checksum_acc += packet_seq;
+			packet_id = b;
+			checksum_acc += packet_id;
 			pstate = READ_LEN;
 			break;
 
@@ -111,7 +131,8 @@ void process_uart1_bytes(void)
 				if (chk == calc)
 				{
 					// packet valid -> process it
-					// you can call a handler: handle_packet(version,type,seq,payload_buf,packet_len);
+					handle_packet(packet_version, packet_type, packet_id, payload_buf, packet_len);
+					printString(&USART0_regs, "\r\n");
 					printString(&USART0_regs, "Packet OK: type=");
 					printHex(&USART0_regs, packet_type);
 					printString(&USART0_regs, " len=");
@@ -134,4 +155,3 @@ void process_uart1_bytes(void)
 		} // switch
 	} // while available
 }
-

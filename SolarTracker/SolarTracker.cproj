@@ -156,6 +156,12 @@
     <Compile Include="drivers\adc\ADC.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="drivers\modules\DHT20.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\modules\DHT20.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="drivers\servo\SERVO.c">
       <SubType>compile</SubType>
     </Compile>
@@ -177,7 +183,13 @@
     <Compile Include="drivers\usart\usart_buffer.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="drivers\usart\usart_buffer.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="drivers\usart\usart_packet.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\usart\usart_packet.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
@@ -187,6 +199,7 @@
   <ItemGroup>
     <Folder Include="drivers" />
     <Folder Include="drivers\adc" />
+    <Folder Include="drivers\modules" />
     <Folder Include="drivers\twi" />
     <Folder Include="drivers\usart" />
     <Folder Include="drivers\servo" />
