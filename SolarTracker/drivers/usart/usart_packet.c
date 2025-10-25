@@ -3,6 +3,7 @@
 
 #include "USART.h"
 #include "../modules/DHT20.h"
+#include "SERVO.h"
 
 #define RX1_PAYLOAD_MAX 128
 
@@ -16,6 +17,14 @@ typedef enum {
 	READ_PAYLOAD,
 	READ_CHECKSUM
 } parser_state_t;
+
+typedef enum {
+	CMD_DHT20 = 0x10,
+	CMD_SERVO = 0x11
+} cmd_type_t;
+
+	RESP_SERVO = 0x22
+} resp_type_t;
 
 static parser_state_t pstate = WAIT_PREAMBLE_1;
 static uint8_t packet_version;
@@ -31,18 +40,27 @@ uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
-volatile bool dht_request_pending = false;
-static uint8_t dht_request_id  = 0;
+volatile bool task_pending = false;
+static uint8_t task_pending_id = 0;
+static uint8_t task_pending_type = 0;
+
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
 	switch (type)
 	{
-		case 0x10: /* CMD_REQ: schedule DHT20 measurement and reply later */
-		dht_request_id  = packet_id;
-		dht_request_pending = true;
+		case CMD_DHT20: /* 0x10: schedule DHT20 measurement */
+		task_pending_type = CMD_DHT20;
+		task_pending_id = packet_id;
+		task_pending = true;
 		break;
 
- 		case 0x20: /* TELEMETRY: immediate small action */
+		case CMD_SERVO: /* 0x11: servo control */
+		task_pending_type = CMD_SERVO;
+		task_pending_id = packet_id;
+		task_pending = true;
+		break;
+
+ 		case 0x20: /* TELEMETRY */
  		printHex(&USART1_regs, 0xFF);
  		printString(&USART1_regs, "\r\n");
  		break;
@@ -80,19 +98,48 @@ void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uin
 // perform scheduled work (non-blocking parser keeps running)
 void process_scheduled_work(void)
 {
-	if (dht_request_pending)
+	if (task_pending)
 	{
-		const uint8_t type = 0x21;	//DHT response
-		const uint8_t id = dht_request_id;	
-		const uint8_t len = 0x07;	//always 8 bytes
-		
+		const uint8_t id = task_pending_id;
+		uint8_t resp_type;
 		uint8_t data[7];
-		getDHT20_Data(data);  // ~80ms blocking
+		uint8_t len;
 		
-		send_packet(&USART1_regs, type, id, data, len);
+		switch (task_pending_type)
+		{
+			case CMD_DHT20:
+			resp_type = RESP_DHT20;
+			len = 0x07;
+			getDHT20_Data(data);
+			break;
+
+			case CMD_SERVO:
+			resp_type = RESP_SERVO;
+			len = 0x01;
+			/* payload[0] = servo_id (0=PWM4_C, 1=PWM4_B)
+			   payload[1] = angle_high
+			   payload[2] = angle_low */
+			if (packet_len >= 3)
+			{
+				uint8_t servo_id = payload_buf[0];
+				uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
+				
+				if (servo_id == 0)
+					sendAngle(&PWM4_C_regs, angle);
+				else if (servo_id == 1)
+					sendAngle(&PWM4_B_regs, angle);
+			}
+			data[0] = 0xFF; /* status OK */
+			break;
+
+			default:
+			task_pending = false;
+			return;
+		}
 		
 		// if the packet was sent, unblock request
-		dht_request_pending = false;
+		send_packet(&USART1_regs, resp_type, id, data, len);
+		task_pending = false;
 	}
 }
 
