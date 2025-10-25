@@ -14,6 +14,6 @@ void process_scheduled_work(void);
 // Called by the parser when a valid packet is received.
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len);
 
-void send_packet(USART_t *usart, uint8_t type, uint8_t id, const uint8_t *payload, uint8_t len);
+void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uint8_t len);
 
 #endif /* USART_PACKET_H */

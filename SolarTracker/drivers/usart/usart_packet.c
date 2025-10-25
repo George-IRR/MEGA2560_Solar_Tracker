@@ -32,15 +32,12 @@ int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
 volatile bool dht_request_pending = false;
-static uint8_t dht_request_seq = 0;
 static uint8_t dht_request_id  = 0;
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
 	switch (type)
 	{
 		case 0x10: /* CMD_REQ: schedule DHT20 measurement and reply later */
-		// simple scheduling: remember seq/id and set pending flag
-		dht_request_seq = packet_id; // or packet_seq if your header uses seq field
 		dht_request_id  = packet_id;
 		dht_request_pending = true;
 		break;
@@ -56,25 +53,8 @@ void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *pa
 	}
 }
 
-// perform scheduled work (non-blocking parser keeps running)
-void process_scheduled_work(void)
-{
-	if (dht_request_pending)
-	{
-		dht_request_pending = false;
-
-		uint8_t data[7];
-		getDHT20_Data(data);  // ~80ms blocking
-		
-		for(int i = 0; i < 7; i++)
-		printHex(&USART0_regs, data[i]);
-		
-		printInt(&USART0_regs, dht_request_id);
-	}
-}
-
 // send_packet: start seq(0xAA55), version=1, type, id, len, payload[], checksum
-void send_packet(USART_t *usart, uint8_t type, uint8_t id, const uint8_t *payload, uint8_t len)
+void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uint8_t len)
 {
 	const uint8_t start0 = 0xAA;
 	const uint8_t start1 = 0x55;
@@ -94,6 +74,26 @@ void send_packet(USART_t *usart, uint8_t type, uint8_t id, const uint8_t *payloa
 	}
 	uint8_t checksum = (uint8_t)(pre_checksum_sum & 0xFF);
 	USART_sendBtye(usart, checksum);
+}
+
+
+// perform scheduled work (non-blocking parser keeps running)
+void process_scheduled_work(void)
+{
+	if (dht_request_pending)
+	{
+		const uint8_t type = 0x21;	//DHT response
+		const uint8_t id = dht_request_id;	
+		const uint8_t len = 0x07;	//always 8 bytes
+		
+		uint8_t data[7];
+		getDHT20_Data(data);  // ~80ms blocking
+		
+		send_packet(&USART1_regs, type, id, data, len);
+		
+		// if the packet was sent, unblock request
+		dht_request_pending = false;
+	}
 }
 
 void process_uart1_bytes(void)
