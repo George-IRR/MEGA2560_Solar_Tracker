@@ -73,6 +73,29 @@ void process_scheduled_work(void)
 	}
 }
 
+// send_packet: start seq(0xAA55), version=1, type, id, len, payload[], checksum
+void send_packet(USART_t *usart, uint8_t type, uint8_t id, const uint8_t *payload, uint8_t len)
+{
+	const uint8_t start0 = 0xAA;
+	const uint8_t start1 = 0x55;
+	const uint8_t version = 0x01;
+
+	USART_sendBtye(usart, start0);
+	USART_sendBtye(usart, start1);
+	USART_sendBtye(usart, version);
+	USART_sendBtye(usart, type);
+	USART_sendBtye(usart, id);
+	USART_sendBtye(usart, len);
+
+	uint16_t pre_checksum_sum = version + type + id + len;
+	for (uint8_t i = 0; i < len; ++i) {
+		USART_sendBtye(usart, payload[i]);
+		pre_checksum_sum += payload[i];
+	}
+	uint8_t checksum = (uint8_t)(pre_checksum_sum & 0xFF);
+	USART_sendBtye(usart, checksum);
+}
+
 void process_uart1_bytes(void)
 {
 	while (uart1_available())
