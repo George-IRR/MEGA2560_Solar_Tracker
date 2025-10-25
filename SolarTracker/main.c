@@ -4,7 +4,7 @@
  * Created: 9/18/2025 6:39:15 PM
  * Author : George
  *
- * avrdude -c wiring -p atmega2560 -P COM4 -b 115200 -D -U flash:w:"MEGA2560_Baremetal\SolarTracker\SolarTracker\Debug\SolarTracker.hex":i
+ * avrdude -c wiring -p atmega2560 -P COM4 -b 115200 -D -U flash:w:"MEGA2560_Baremetal\SolarTracker\Debug\SolarTracker.hex":i
  *
  */ 
 
@@ -77,60 +77,6 @@ void solarTrack(){
 	}
 }
 
-
-//		NEW METHOD IN usart_buffer.c
-// #define RX_BUF_SIZE 64
-// uint8_t rx0_index=0;
-// char rx0_buf[RX_BUF_SIZE];
-// 
-// ISR(USART0_RX_vect) //Interrupt PC Serial receive
-// {
-// 	uint8_t data = UDR0;  // Read to clear the RXC1 flag
-// 
-// 	// Send commands to Bluetooth module
-// 	if (rx0_index < RX_BUF_SIZE - 1) 
-// 	{
-// 		if (data == '\r' || data == '\n') 
-// 		{
-// 			char *BT_COMMAND = strstr(rx0_buf,"AT"); 
-// 			if(BT_COMMAND != NULL)
-// 			{				
-// 				//send command & message
-// 				printString(&USART1_regs, BT_COMMAND);
-// 				
-// 				printString(&USART0_regs, "\n Command sent: ");
-// 				printString(&USART0_regs, BT_COMMAND);	
-// 				printString(&USART0_regs, "\n");			
-// 				/* //DEBUG, if you leave 19200 baud it will not show the whole UART response from BT module
-// 				printString(&USART0_regs, "\n Command sent: ");
-// 				printString(&USART0_regs, BT_COMMAND);
-// 				printString(&USART0_regs, "\n Found from the array: ");
-// 				printString(&USART0_regs, rx0_buf);
-// 				printString(&USART0_regs, "\n");
-// 				*/
-// 				// Clear buffer and reset index
-// 				memset(rx0_buf, 0, sizeof(rx0_buf));
-// 				rx0_index = 0;
-// 			}
-// 			
-// 		}	
-// 		else 
-// 		{
-// 			// Store data in buffer
-// 			rx0_buf[rx0_index++] = data;
-// 		}
-// 	} 
-// 	else 
-// 	{
-// 		// Buffer overflow handling (optional)
-// 		printString(&USART0_regs, "Buffer overflow\n");
-// 		memset(rx0_buf, 0, sizeof(rx0_buf));
-// 		rx0_index = 0;
-// 	}
-// }
-
-
-
 //TEMPORARY COMMENT
 // uint8_t rx1_index=0;
 // char rx1_buf[RX_BUF_SIZE];
@@ -195,6 +141,7 @@ int main(void)
 	
 	while (1) {
 		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
+		process_scheduled_work();
 		//blink();
 		if (uart1_clear_overflow_flag())
 		{

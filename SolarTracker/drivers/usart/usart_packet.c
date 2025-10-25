@@ -31,25 +31,45 @@ uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
+volatile bool dht_request_pending = false;
+static uint8_t dht_request_seq = 0;
+static uint8_t dht_request_id  = 0;
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
-	uint8_t data[7];
-	switch (type) 
+	switch (type)
 	{
-		case 0x10: // CMD_REQ
-		getDHT20_Data(data); // example param for now AA 55 01 10 00 00 11
-		for(int i = 0; i < 7; i++)
-		 	printHex(&USART0_regs, data[i]);
+		case 0x10: /* CMD_REQ: schedule DHT20 measurement and reply later */
+		// simple scheduling: remember seq/id and set pending flag
+		dht_request_seq = packet_id; // or packet_seq if your header uses seq field
+		dht_request_id  = packet_id;
+		dht_request_pending = true;
 		break;
-	
-		case 0x20: // TELEMETRY
-		printHex(&USART1_regs,0XFF);
-		break;
-		
+
+ 		case 0x20: /* TELEMETRY: immediate small action */
+ 		printHex(&USART1_regs, 0xFF);
+ 		printString(&USART1_regs, "\r\n");
+ 		break;
+
 		default:
-		// unknown type — log or ignore
 		printString(&USART0_regs, "Unknown packet type\r\n");
 		break;
+	}
+}
+
+// perform scheduled work (non-blocking parser keeps running)
+void process_scheduled_work(void)
+{
+	if (dht_request_pending)
+	{
+		dht_request_pending = false;
+
+		uint8_t data[7];
+		getDHT20_Data(data);  // ~80ms blocking
+		
+		for(int i = 0; i < 7; i++)
+		printHex(&USART0_regs, data[i]);
+		
+		printInt(&USART0_regs, dht_request_id);
 	}
 }
 
@@ -132,6 +152,8 @@ void process_uart1_bytes(void)
 				{
 					// packet valid -> process it
 					handle_packet(packet_version, packet_type, packet_id, payload_buf, packet_len);
+				
+						//debug
 					printString(&USART0_regs, "\r\n");
 					printString(&USART0_regs, "Packet OK: type=");
 					printHex(&USART0_regs, packet_type);
@@ -155,3 +177,4 @@ void process_uart1_bytes(void)
 		} // switch
 	} // while available
 }
+

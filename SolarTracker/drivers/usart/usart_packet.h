@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+extern volatile bool dht_request_pending;
+
 /* Public API for the UART packet parser */
 void process_uart1_bytes(void);
 

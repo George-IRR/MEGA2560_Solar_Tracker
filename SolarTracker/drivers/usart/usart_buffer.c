@@ -12,7 +12,7 @@
 
 #include "USART.h"
 
-#define RX1_BUFFER_SIZE 128U
+#define RX1_BUFFER_SIZE 256U // Large enough to hold data during ~80ms DHT20 blocking calls
 
 static volatile uint8_t rx1_buffer[RX1_BUFFER_SIZE];
 static volatile uint8_t rx1_head = 0;
