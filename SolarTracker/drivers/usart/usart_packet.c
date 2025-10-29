@@ -3,6 +3,7 @@
 
 #include "USART.h"
 #include "../modules/DHT20.h"
+#include "../servo/SERVO.h"
 
 #define RX1_PAYLOAD_MAX 128
 
@@ -17,6 +18,26 @@ typedef enum {
 	READ_CHECKSUM
 } parser_state_t;
 
+typedef enum {
+	CMD_DHT20 = 0x10,
+	CMD_SERVO = 0x11
+} cmd_type_t;
+
+typedef enum {
+	RESP_DHT20 = 0x21,
+	RESP_SERVO = 0x22,
+	RESP_STATUS = 0x23
+} resp_type_t;
+
+typedef enum {
+	STATUS_OK = 0xFF,
+	STATUS_BUSY = 0xFE,
+	STATUS_INVALID_CMD = 0xFD,
+	STATUS_SERVO_INVALID_ID = 0xFC,
+	STATUS_SERVO_ANGLE_OOR = 0xFB,
+	STATUS_CHECKSUM_ERR = 0xFA
+} status_code_t;
+
 static parser_state_t pstate = WAIT_PREAMBLE_1;
 static uint8_t packet_version;
 static uint8_t packet_type;
@@ -24,28 +45,36 @@ static uint8_t packet_id;
 static uint8_t packet_len;
 static uint8_t payload_buf[RX1_PAYLOAD_MAX];
 static uint8_t payload_pos;
-static uint16_t checksum_acc; // use 16-bit to accumulate safely
+static uint16_t checksum_acc;
 
-// forward declarations of the usart_buffer API from usart_buffer.c
 uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
-volatile bool dht_request_pending = false;
-static uint8_t dht_request_id  = 0;
+volatile bool task_pending = false;
+static uint8_t task_pending_id = 0;
+static uint8_t task_pending_type = 0;
+
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
 	switch (type)
 	{
-		case 0x10: /* CMD_REQ: schedule DHT20 measurement and reply later */
-		dht_request_id  = packet_id;
-		dht_request_pending = true;
+		case CMD_DHT20: /* 0x10: schedule DHT20 measurement */
+		task_pending_type = CMD_DHT20;
+		task_pending_id = packet_id;
+		task_pending = true;
 		break;
 
- 		case 0x20: /* TELEMETRY: immediate small action */
- 		printHex(&USART1_regs, 0xFF);
- 		printString(&USART1_regs, "\r\n");
- 		break;
+		case CMD_SERVO: /* 0x11: servo control */
+		task_pending_type = CMD_SERVO;
+		task_pending_id = packet_id;
+		task_pending = true;
+		break;
+
+		case 0x20: /* TELEMETRY */
+		printHex(&USART1_regs, 0xFF);
+		printString(&USART1_regs, "\r\n");
+		break;
 
 		default:
 		printString(&USART0_regs, "Unknown packet type\r\n");
@@ -53,7 +82,6 @@ void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *pa
 	}
 }
 
-// send_packet: start seq(0xAA55), version=1, type, id, len, payload[], checksum
 void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uint8_t len)
 {
 	const uint8_t start0 = 0xAA;
@@ -76,23 +104,66 @@ void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uin
 	USART_sendBtye(usart, checksum);
 }
 
-
-// perform scheduled work (non-blocking parser keeps running)
 void process_scheduled_work(void)
 {
-	if (dht_request_pending)
+	if (task_pending)
 	{
-		const uint8_t type = 0x21;	//DHT response
-		const uint8_t id = dht_request_id;	
-		const uint8_t len = 0x07;	//always 8 bytes
-		
+		const uint8_t id = task_pending_id;
+		uint8_t resp_type;
 		uint8_t data[7];
-		getDHT20_Data(data);  // ~80ms blocking
+		uint8_t len;
+		uint8_t status = STATUS_OK;
 		
-		send_packet(&USART1_regs, type, id, data, len);
+		switch (task_pending_type)
+		{
+			case CMD_DHT20:
+			resp_type = RESP_DHT20;
+			len = 0x07;
+			getDHT20_Data(data);
+			break;
+
+			case CMD_SERVO:
+			resp_type = RESP_STATUS;
+			len = 0x01;
+			
+			if (packet_len < 3)
+			{
+				status = STATUS_INVALID_CMD;
+				data[0] = status;
+				break;
+			}
+			
+			uint8_t servo_id = payload_buf[0];
+			uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
+			
+			if (servo_id > 1)
+			{
+				status = STATUS_SERVO_INVALID_ID;
+			} else if (servo_id == 0 && angle > PWM4_C_regs.max_degree)
+			{
+				status = STATUS_SERVO_ANGLE_OOR;
+			} else if (servo_id == 1 && angle > PWM4_B_regs.max_degree)
+			{
+				status = STATUS_SERVO_ANGLE_OOR;
+			} else
+			{
+				if (servo_id == 0)
+				sendAngle(&PWM4_C_regs, angle);
+				else
+				sendAngle(&PWM4_B_regs, angle);
+				status = STATUS_OK;
+			}
+			
+			data[0] = status;
+			break;
+
+			default:
+			task_pending = false;
+			return;
+		}
 		
-		// if the packet was sent, unblock request
-		dht_request_pending = false;
+		send_packet(&USART1_regs, resp_type, id, data, len);
+		task_pending = false;
 	}
 }
 
@@ -116,15 +187,13 @@ void process_uart1_bytes(void)
 				pstate = READ_VERSION;
 			} else
 			{
-				// handle overlapping: if this byte is 0xAA, stay in state2 (start again),
-				// else go back to searching
 				pstate = (b == 0xAA) ? WAIT_PREAMBLE_2 : WAIT_PREAMBLE_1;
 			}
 			break;
 
 			case READ_VERSION:
 			packet_version = b;
-			checksum_acc = packet_version; // start checksum from version
+			checksum_acc = packet_version;
 			pstate = READ_TYPE;
 			break;
 
@@ -145,11 +214,9 @@ void process_uart1_bytes(void)
 			checksum_acc += packet_len;
 			if (packet_len == 0)
 			{
-				// no payload, next read checksum
 				pstate = READ_CHECKSUM;
 			} else if (packet_len > RX1_PAYLOAD_MAX)
 			{
-				// payload too big -> reject and resync
 				pstate = WAIT_PREAMBLE_1;
 			} else
 			{
@@ -173,23 +240,30 @@ void process_uart1_bytes(void)
 				uint8_t calc = (uint8_t)(checksum_acc & 0xFF);
 				if (chk == calc)
 				{
-					// packet valid -> process it
-					handle_packet(packet_version, packet_type, packet_id, payload_buf, packet_len);
-				
-						//debug
+					if (task_pending)
+					{
+						uint8_t busy_data[1] = {STATUS_BUSY};
+						send_packet(&USART1_regs, RESP_STATUS, packet_id, busy_data, 1);
+					} else
+					{
+						handle_packet(packet_version, packet_type, packet_id, payload_buf, packet_len);
+					}
+					
 					printString(&USART0_regs, "\r\n");
 					printString(&USART0_regs, "Packet OK: type=");
 					printHex(&USART0_regs, packet_type);
+					printString(&USART0_regs, " id=");
+					printHex(&USART0_regs, packet_id);
 					printString(&USART0_regs, " len=");
 					printInt(&USART0_regs, packet_len);
 					printString(&USART0_regs, "\r\n");
 				} else
 				{
-					// bad checksum: ignore or log
+					uint8_t err_data[1] = {STATUS_CHECKSUM_ERR};
+					send_packet(&USART1_regs, RESP_STATUS, packet_id, err_data, 1);
 					printString(&USART0_regs, "Bad checksum\r\n");
 				}
 				
-				// Look for next packet
 				pstate = WAIT_PREAMBLE_1;
 				break;
 			}
@@ -197,7 +271,6 @@ void process_uart1_bytes(void)
 			default:
 			pstate = WAIT_PREAMBLE_1;
 			break;
-		} // switch
-	} // while available
+		}
+	}
 }
-
