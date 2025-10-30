@@ -249,14 +249,15 @@ void process_uart1_bytes(void)
 						handle_packet(packet_version, packet_type, packet_id, payload_buf, packet_len);
 					}
 					
-					printString(&USART0_regs, "\r\n");
-					printString(&USART0_regs, "Packet OK: type=");
-					printHex(&USART0_regs, packet_type);
-					printString(&USART0_regs, " id=");
-					printHex(&USART0_regs, packet_id);
-					printString(&USART0_regs, " len=");
-					printInt(&USART0_regs, packet_len);
-					printString(&USART0_regs, "\r\n");
+					//for debug, if USB serial is not connected it will hang
+// 					printString(&USART0_regs, "\r\n");
+// 					printString(&USART0_regs, "Packet OK: type=");
+// 					printHex(&USART0_regs, packet_type);
+// 					printString(&USART0_regs, " id=");
+// 					printHex(&USART0_regs, packet_id);
+// 					printString(&USART0_regs, " len=");
+// 					printInt(&USART0_regs, packet_len);
+// 					printString(&USART0_regs, "\r\n");
 				} else
 				{
 					uint8_t err_data[1] = {STATUS_CHECKSUM_ERR};
