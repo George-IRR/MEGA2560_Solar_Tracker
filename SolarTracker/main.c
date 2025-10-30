@@ -24,6 +24,7 @@
 #include "drivers/modules/DHT20.h"
 #include "drivers/usart/usart_buffer.h"
 #include "drivers/usart/usart_packet.h"
+#include "modules/scheduler/Scheduler.h"
 
 #define BLINK_DELAY 500
 #define BLINK_DELAY_short 50

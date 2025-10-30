@@ -195,6 +195,12 @@
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="modules\scheduler\Scheduler.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="modules\scheduler\Scheduler.h">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="drivers" />
@@ -203,6 +209,8 @@
     <Folder Include="drivers\twi" />
     <Folder Include="drivers\usart" />
     <Folder Include="drivers\servo" />
+    <Folder Include="modules" />
+    <Folder Include="modules\scheduler" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
