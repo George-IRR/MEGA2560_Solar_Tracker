@@ -3,7 +3,7 @@
 
 #include "usart_packet.h"
 #include "USART.h"
-#include "../modules/DHT20.h"
+#include "../../modules/DHT20/DHT20.h"
 #include "../servo/SERVO.h"
 
 // Parser state enum (only needed internally)

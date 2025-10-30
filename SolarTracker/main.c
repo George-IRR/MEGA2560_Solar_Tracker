@@ -21,7 +21,7 @@
 #include "drivers/servo/SERVO.h"
 #include "drivers/usart/USART.h"
 #include "drivers/twi/TWI.h"
-#include "drivers/modules/DHT20.h"
+#include "modules/DHT20/DHT20.h"
 #include "drivers/usart/usart_buffer.h"
 #include "drivers/usart/usart_packet.h"
 #include "modules/scheduler/Scheduler.h"

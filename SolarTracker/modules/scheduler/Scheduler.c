@@ -1,6 +1,6 @@
 #include "../../drivers/usart/usart_packet.h"
 #include "../../drivers/usart/USART.h"
-#include "../../drivers/modules/DHT20.h"
+#include "../DHT20/DHT20.h"
 #include "../../drivers/servo/SERVO.h"
 
 

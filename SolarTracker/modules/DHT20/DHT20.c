@@ -1,6 +1,6 @@
 #define F_CPU 16000000UL 
 #include <avr/io.h>
-#include "../twi\TWI.h"
+#include "../../drivers/twi/TWI.h"
 #include <util/delay.h>
 
 void getDHT20_Data(uint8_t data[7])
