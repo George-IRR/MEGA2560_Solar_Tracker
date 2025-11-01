@@ -140,7 +140,37 @@ int main(void)
 	sei();
 	TWI_init();
 	
+	SERVO_init();
+	SERVO_Zero(&PWM4_C_regs);
+	SERVO_Zero(&PWM4_B_regs);
+	printString(&USART1_regs,"Calibration Completed \n");
+	
 	while (1) {
+		goToAngle(&PWM4_C_regs,300);
+		_delay_ms(1000);
+
+		goToAngle(&PWM4_B_regs,130);
+		_delay_ms(1000);
+
+		goToAngle(&PWM4_B_regs,160);
+		_delay_ms(1000);
+
+		goToAngle(&PWM4_B_regs,175);
+		_delay_ms(1000);
+
+
+		goToAngle(&PWM4_C_regs,160);
+		_delay_ms(1000);		
+		
+		goToAngle(&PWM4_C_regs,0);
+		_delay_ms(1000);
+		
+		goToAngle(&PWM4_C_regs,160);
+		_delay_ms(1000);
+		
+		goToAngle(&PWM4_C_regs,0);
+		_delay_ms(1000);
+				
 		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
 		process_scheduled_work();
 		//blink();

@@ -1,17 +1,21 @@
+#define F_CPU 16000000UL 
 #include <avr/io.h>
 #include "SERVO.h"
+#include <util/delay.h>
 
 PWM4_t PWM4_C_regs = {
 	&OCR4C, //PH5
 	300,
 	0,
 	300,
+	0		// starting angle
 };
 PWM4_t PWM4_B_regs = {
 	&OCR4B, //PH4
 	180,
 	130,	// Safest max degrees
-	175		// It cannot go lower or higher because it will break the 3D print holder
+	175,	// It cannot go lower or higher because it will break the 3D print holder
+	150		// starting angle
 };
 
 void SERVO_init(void)
@@ -40,12 +44,48 @@ void SERVO_init(void)
 	DDRH |= (1<<PH5) | (1<<PH4);
 }
 
+void SERVO_Zero(PWM4_t *pwm_pin)
+{
+	sendAngle(pwm_pin, pwm_pin->current_angle);
+}
+
+#include "../usart/USART.h"
 void sendAngle(PWM4_t *pwm_pin, uint16_t angle)
 {
-	//clamp values
-	if(angle < pwm_pin->low_limit) angle = 0;
-	if(angle > (pwm_pin->high_limit) ) angle = (pwm_pin->high_limit);
-	
+// 	//clamp values
+// 	if(angle < pwm_pin->low_limit) angle = 0;
+// 	if(angle > (pwm_pin->high_limit) ) angle = (pwm_pin->high_limit);
+// 	
 	//0.5ms = 1000 ticks, 2.5ms = 5000 ticks
-	*(pwm_pin->ocrc) = (angle * ((5000-1000)/ (pwm_pin->max_degree) )) + 1000;
+	*(pwm_pin->ocr) = (angle * ((5000-1000)/ (pwm_pin->max_degree) )) + 1000;
+}
+
+void goToAngle(PWM4_t *pwm_pin, uint16_t angle)
+{
+	// Clamp angle to limits before looping
+	if (angle < pwm_pin->low_limit) angle = pwm_pin->low_limit;
+	if (angle > pwm_pin->high_limit) angle = pwm_pin->high_limit;
+
+	if (angle < pwm_pin->current_angle)
+	{
+		for (int16_t i = (int16_t)pwm_pin->current_angle; i >= (int16_t)angle; i--)
+		{
+			printInt(&USART1_regs, (uint16_t)i);  // Print the actual angle being sent
+			printString(&USART1_regs, "\n");
+			sendAngle(pwm_pin, (uint16_t)i);
+			_delay_ms(20);
+		}
+	}
+	else if (angle > pwm_pin->current_angle)
+	{
+		for (int16_t i = (int16_t)pwm_pin->current_angle; i <= (int16_t)angle; i++)
+		{
+			printInt(&USART1_regs, (uint16_t)i);  // Print the actual angle being sent
+			printString(&USART1_regs, "\n");
+			sendAngle(pwm_pin, (uint16_t)i);
+			_delay_ms(20);
+		}
+	}
+
+	pwm_pin->current_angle = angle;
 }
