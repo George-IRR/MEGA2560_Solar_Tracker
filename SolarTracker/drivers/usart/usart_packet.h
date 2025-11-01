@@ -31,7 +31,7 @@ typedef enum {
 } status_code_t;
 
 
-extern volatile bool task_pending;
+
 extern uint8_t task_pending_id;
 extern uint8_t task_pending_type;
 extern uint8_t packet_len;

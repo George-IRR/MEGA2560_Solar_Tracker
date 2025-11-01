@@ -5,6 +5,7 @@
 #include "USART.h"
 #include "../../modules/DHT20/DHT20.h"
 #include "../servo/SERVO.h"
+#include "../../modules/scheduler/Scheduler.h"
 
 // Parser state enum (only needed internally)
 typedef enum {
@@ -27,7 +28,6 @@ static uint8_t payload_pos;
 static uint16_t checksum_acc;
 
 // PUBLIC global variables (declared in .h, defined here ONCE)
-volatile bool task_pending = false;
 uint8_t task_pending_id = 0;
 uint8_t task_pending_type = 0;
 uint8_t packet_len = 0;
@@ -45,13 +45,13 @@ void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *pa
 		case CMD_DHT20: /* 0x10: schedule DHT20 measurement */
 		task_pending_type = CMD_DHT20;
 		task_pending_id = packet_id;
-		task_pending = true;
+		task_pending_usart = true;
 		break;
 
 		case CMD_SERVO: /* 0x11: servo control */
 		task_pending_type = CMD_SERVO;
 		task_pending_id = packet_id;
-		task_pending = true;
+		task_pending_usart = true;
 		break;
 
 		case 0x20: /* TELEMETRY */
@@ -160,7 +160,7 @@ void process_uart1_bytes(void)
 				uint8_t calc = (uint8_t)(checksum_acc & 0xFF);
 				if (chk == calc)
 				{
-					if (task_pending)
+					if (task_pending_usart)
 					{
 						uint8_t busy_data[1] = {STATUS_BUSY};
 						send_packet(&USART1_regs, RESP_STATUS, packet_id, busy_data, 1);

@@ -4,10 +4,11 @@
 #include "../../drivers/servo/SERVO.h"
 
 
+volatile bool task_pending_usart = false;
 
 void process_scheduled_work(void)
 {
-	if (task_pending)
+	if (task_pending_usart)
 	{
 		const uint8_t id = task_pending_id;
 		uint8_t resp_type;
@@ -59,11 +60,11 @@ void process_scheduled_work(void)
 			break;
 
 			default:
-			task_pending = false;
+			task_pending_usart = false;
 			return;
 		}
 		
 		send_packet(&USART1_regs, resp_type, id, data, len);
-		task_pending = false;
+		task_pending_usart = false;
 	}
 }
