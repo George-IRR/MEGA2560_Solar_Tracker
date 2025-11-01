@@ -44,39 +44,6 @@ void blink_short()
 	PORTB &= ~(1 << PB7);	// LED off
 	_delay_ms(BLINK_DELAY_short);
 }
-uint16_t analogValue0 = 0;
-uint16_t analogValue1 = 0;
-
-uint16_t angle = 180;
-
-void solarTrack(){
-	SERVO_init();
-	ADC_init();
-	sendAngle(&PWM4_C_regs, angle);
-	while(1){
-		analogValue0 = ADC_read(0);
-		analogValue1 = ADC_read(1);
-
-
-		if(analogValue0>analogValue1) 
-		{
-			if(angle<MAX_SERVO_DEGREE) sendAngle(&PWM4_C_regs, angle++);
-		
-		}
-		else if(analogValue0<analogValue1)
-		{
-			if(angle>0) sendAngle(&PWM4_C_regs, angle--);
-			
-		}
-		else if(abs(analogValue0-analogValue1)<400) //tolerance
-		{
-			blink();
-		}
-
-		_delay_ms(10);
-		
-	}
-}
 
 //TEMPORARY COMMENT
 // uint8_t rx1_index=0;
@@ -132,6 +99,89 @@ void solarTrack(){
 // 	}
 // }
 
+/*
+ * Layout:
+ * ADC12 (Left Top)     |  ADC10 (Right Top)
+ * --------------------|--------------------
+ * ADC14 (Left Bottom)  |  ADC8 (Right Bottom)
+ *
+ */
+void solarTrack2Axis(void) {	
+	const int16_t tolerance = 50; // Deadzone threshold
+	
+	while (1) {
+		// Read LDR values
+		uint16_t analogValue0 = ADC_read(8);  
+		uint16_t analogValue1 = ADC_read(10); 
+		uint16_t analogValue2 = ADC_read(12); 
+		uint16_t analogValue3 = ADC_read(14); 
+
+		// Calculate aggregate light for each side
+		uint32_t left_light = analogValue2 + analogValue3;
+		uint32_t right_light = analogValue0 + analogValue1;
+		uint32_t top_light = analogValue1 + analogValue2;
+		uint32_t bottom_light = analogValue0 + analogValue3;
+
+		// Calculate differences
+		// diff_h > 0	Left is brighter
+		// diff_v > 0	Top is brighter
+		int32_t diff_h = left_light - right_light;
+		int32_t diff_v = top_light - bottom_light;
+
+		uint8_t h_centered = 0;
+		uint8_t v_centered = 0;
+		
+		// angle++ moves Left (towards brighter 'left_light')
+		if (diff_h > tolerance) 
+		{
+			if (PWM4_C_regs.current_angle < PWM4_C_regs.high_limit) 
+			{
+				PWM4_C_regs.current_angle++;
+				sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
+			}
+		} 
+		//angle-- moves Right (towards brighter 'right_light')
+		else if (diff_h < -tolerance) 
+		{
+			if (PWM4_C_regs.current_angle > PWM4_C_regs.low_limit) 
+			{
+				PWM4_C_regs.current_angle--;
+				sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
+			}
+		} 
+		else 
+		{
+			h_centered = 1; // Horizontal is centered
+		}
+		
+		//angle-- moves Up (towards brighter 'top_light')
+		if (diff_v > tolerance) 
+		{
+			if (PWM4_B_regs.current_angle > PWM4_B_regs.low_limit) 
+			{
+				PWM4_B_regs.current_angle--;
+				sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
+			}
+
+		} 
+		
+		//angle++ moves Down (towards brighter 'bottom_light')
+		else if (diff_v < -tolerance) 
+		{
+			if (PWM4_B_regs.current_angle < PWM4_B_regs.high_limit) 
+			{
+				PWM4_B_regs.current_angle++;
+				sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
+			}
+		} 
+		else 
+		{
+			v_centered = 1; // Vertical is centered
+		}
+		
+		_delay_ms(17);
+	}
+}
 
 int main(void)
 {
@@ -144,32 +194,32 @@ int main(void)
 	SERVO_Zero(&PWM4_C_regs);
 	SERVO_Zero(&PWM4_B_regs);
 	printString(&USART1_regs,"Calibration Completed \n");
-	
+	solarTrack2Axis();
 	while (1) {
-		goToAngle(&PWM4_C_regs,300);
-		_delay_ms(1000);
-
-		goToAngle(&PWM4_B_regs,130);
-		_delay_ms(1000);
-
-		goToAngle(&PWM4_B_regs,160);
-		_delay_ms(1000);
-
-		goToAngle(&PWM4_B_regs,175);
-		_delay_ms(1000);
-
-
-		goToAngle(&PWM4_C_regs,160);
-		_delay_ms(1000);		
-		
-		goToAngle(&PWM4_C_regs,0);
-		_delay_ms(1000);
-		
-		goToAngle(&PWM4_C_regs,160);
-		_delay_ms(1000);
-		
-		goToAngle(&PWM4_C_regs,0);
-		_delay_ms(1000);
+// 		goToAngle(&PWM4_C_regs,300);
+// 		_delay_ms(1000);
+// 
+// 		goToAngle(&PWM4_B_regs,130);
+// 		_delay_ms(1000);
+// 
+// 		goToAngle(&PWM4_B_regs,160);
+// 		_delay_ms(1000);
+// 
+// 		goToAngle(&PWM4_B_regs,175);
+// 		_delay_ms(1000);
+// 
+// 
+// 		goToAngle(&PWM4_C_regs,160);
+// 		_delay_ms(1000);		
+// 		
+// 		goToAngle(&PWM4_C_regs,0);
+// 		_delay_ms(1000);
+// 		
+// 		goToAngle(&PWM4_C_regs,160);
+// 		_delay_ms(1000);
+// 		
+// 		goToAngle(&PWM4_C_regs,0);
+// 		_delay_ms(1000);
 				
 		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
 		process_scheduled_work();

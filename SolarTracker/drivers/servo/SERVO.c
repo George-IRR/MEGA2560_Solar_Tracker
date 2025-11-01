@@ -52,10 +52,10 @@ void SERVO_Zero(PWM4_t *pwm_pin)
 #include "../usart/USART.h"
 void sendAngle(PWM4_t *pwm_pin, uint16_t angle)
 {
-// 	//clamp values
-// 	if(angle < pwm_pin->low_limit) angle = 0;
-// 	if(angle > (pwm_pin->high_limit) ) angle = (pwm_pin->high_limit);
-// 	
+	//clamp values
+	if(angle < pwm_pin->low_limit) angle = 0;
+	if(angle > (pwm_pin->high_limit) ) angle = (pwm_pin->high_limit);
+	
 	//0.5ms = 1000 ticks, 2.5ms = 5000 ticks
 	*(pwm_pin->ocr) = (angle * ((5000-1000)/ (pwm_pin->max_degree) )) + 1000;
 }
