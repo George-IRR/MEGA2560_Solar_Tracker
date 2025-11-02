@@ -201,6 +201,12 @@
     <Compile Include="modules\scheduler\Scheduler.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="modules\solar_track\solar_track.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="modules\solar_track\solar_track.h">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="drivers" />
@@ -210,6 +216,7 @@
     <Folder Include="drivers\servo" />
     <Folder Include="modules" />
     <Folder Include="modules\DHT20" />
+    <Folder Include="modules\solar_track" />
     <Folder Include="modules\scheduler" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
