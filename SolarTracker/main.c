@@ -106,15 +106,26 @@ void blink_short()
  * ADC14 (Left Bottom)  |  ADC8 (Right Bottom)
  *
  */
-void solarTrack2Axis(void) {	
+void solarTrack2Axis(void) 
+{
 	const int16_t tolerance = 50; // Deadzone threshold
 	
-	while (1) {
+	// Use #define for array size instead of const
+	#define AVG_SAMPLES 4
+	
+	// Circular buffers for averaging
+	int32_t diff_h_buffer[AVG_SAMPLES] = {0, 0, 0, 0};
+	int32_t diff_v_buffer[AVG_SAMPLES] = {0, 0, 0, 0};
+	uint8_t buffer_index = 0;
+	uint8_t samples_collected = 0;
+	
+	while (1) 
+	{
 		// Read LDR values
-		uint16_t analogValue0 = ADC_read(8);  
-		uint16_t analogValue1 = ADC_read(10); 
-		uint16_t analogValue2 = ADC_read(12); 
-		uint16_t analogValue3 = ADC_read(14); 
+		uint16_t analogValue0 = ADC_read(12);
+		uint16_t analogValue1 = ADC_read(13);
+		uint16_t analogValue2 = ADC_read(14);
+		uint16_t analogValue3 = ADC_read(15);
 
 		// Calculate aggregate light for each side
 		uint32_t left_light = analogValue2 + analogValue3;
@@ -125,62 +136,79 @@ void solarTrack2Axis(void) {
 		// Calculate differences
 		// diff_h > 0	Left is brighter
 		// diff_v > 0	Top is brighter
-		int32_t diff_h = left_light - right_light;
-		int32_t diff_v = top_light - bottom_light;
-
-		uint8_t h_centered = 0;
-		uint8_t v_centered = 0;
+		int32_t diff_h_raw = left_light - right_light;
+		int32_t diff_v_raw = top_light - bottom_light;
 		
-		// angle++ moves Left (towards brighter 'left_light')
-		if (diff_h > tolerance) 
+		// Store in circular buffer
+		diff_h_buffer[buffer_index] = diff_h_raw;
+		diff_v_buffer[buffer_index] = diff_v_raw;
+		buffer_index = (buffer_index + 1) % AVG_SAMPLES;
+		
+		// Track how many samples we've collected (up to AVG_SAMPLES)
+		if (samples_collected < AVG_SAMPLES) 
 		{
-			if (PWM4_C_regs.current_angle < PWM4_C_regs.high_limit) 
-			{
-				PWM4_C_regs.current_angle++;
-				sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
-			}
-		} 
-		//angle-- moves Right (towards brighter 'right_light')
-		else if (diff_h < -tolerance) 
-		{
-			if (PWM4_C_regs.current_angle > PWM4_C_regs.low_limit) 
-			{
-				PWM4_C_regs.current_angle--;
-				sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
-			}
-		} 
-		else 
-		{
-			h_centered = 1; // Horizontal is centered
+			samples_collected++;
 		}
 		
-		//angle-- moves Up (towards brighter 'top_light')
-		if (diff_v > tolerance) 
+		// Calculate averages
+		int32_t diff_h_sum = 0;
+		int32_t diff_v_sum = 0;
+		for (uint8_t i = 0; i < samples_collected; i++) 
 		{
-			if (PWM4_B_regs.current_angle > PWM4_B_regs.low_limit) 
-			{
-				PWM4_B_regs.current_angle--;
-				sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
-			}
-
-		} 
+			diff_h_sum += diff_h_buffer[i];
+			diff_v_sum += diff_v_buffer[i];
+		}
+		int32_t diff_h = diff_h_sum / samples_collected;
+		int32_t diff_v = diff_v_sum / samples_collected;
 		
-		//angle++ moves Down (towards brighter 'bottom_light')
-		else if (diff_v < -tolerance) 
+		// Only make movements after we have enough samples
+		if (samples_collected >= AVG_SAMPLES) 
 		{
-			if (PWM4_B_regs.current_angle < PWM4_B_regs.high_limit) 
+			// angle++ moves Left (towards brighter 'left_light')
+			if (diff_h > tolerance)
 			{
-				PWM4_B_regs.current_angle++;
-				sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
+				if (PWM4_C_regs.current_angle < PWM4_C_regs.high_limit)
+				{
+					PWM4_C_regs.current_angle++;
+					sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
+				}
 			}
-		} 
-		else 
-		{
-			v_centered = 1; // Vertical is centered
+			//angle-- moves Right (towards brighter 'right_light')
+			else if (diff_h < -tolerance)
+			{
+				if (PWM4_C_regs.current_angle > PWM4_C_regs.low_limit)
+				{
+					PWM4_C_regs.current_angle--;
+					sendAngle(&PWM4_C_regs, PWM4_C_regs.current_angle);
+				}
+			}
+			
+			//angle-- moves Up (towards brighter 'top_light')
+			if (diff_v > tolerance)
+			{
+				if (PWM4_B_regs.current_angle > PWM4_B_regs.low_limit)
+				{
+					PWM4_B_regs.current_angle--;
+					sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
+				}
+
+			}
+			
+			//angle++ moves Down (towards brighter 'bottom_light')
+			else if (diff_v < -tolerance)
+			{
+				if (PWM4_B_regs.current_angle < PWM4_B_regs.high_limit)
+				{
+					PWM4_B_regs.current_angle++;
+					sendAngle(&PWM4_B_regs, PWM4_B_regs.current_angle);
+				}
+			}
 		}
 		
-		_delay_ms(17);
+		_delay_ms(12); //17 -> slow  12 -> med  7 ->fast
 	}
+	
+	#undef AVG_SAMPLES
 }
 
 int main(void)
@@ -190,12 +218,14 @@ int main(void)
 	sei();
 	TWI_init();
 	
+	ADC_init();
 	SERVO_init();
 	SERVO_Zero(&PWM4_C_regs);
 	SERVO_Zero(&PWM4_B_regs);
 	printString(&USART1_regs,"Calibration Completed \n");
-	solarTrack2Axis();
+	
 	while (1) {
+		solarTrack2Axis();
 // 		goToAngle(&PWM4_C_regs,300);
 // 		_delay_ms(1000);
 // 
