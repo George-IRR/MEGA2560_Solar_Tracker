@@ -26,6 +26,7 @@
 #include "drivers/usart/usart_packet.h"
 #include "modules/scheduler/Scheduler.h"
 #include "modules/solar_track/solar_track.h"
+#include "drivers/timer/timer.h"
 
 #define BLINK_DELAY 500
 #define BLINK_DELAY_short 50
@@ -112,11 +113,17 @@ int main(void)
 	SERVO_Zero(&PWM4_C_regs);
 	SERVO_Zero(&PWM4_B_regs);
 	printString(&USART1_regs,"Calibration Completed \n");
+	Timer1_Init_Polling();
 	
 	while (1) 
 	{
-		solarTrack2Axis_step();
-		printString(&USART1_regs,"\n Hello \n");
+		//solarTrack2Axis_step();
+		if (TIFR1 & (1 << OCF1A))
+		{
+			TIFR1 = (1 << OCF1A);
+			solarTrack2Axis_step();
+		}
+
 		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
 		process_scheduled_work();
 		if (uart1_clear_overflow_flag())
@@ -125,5 +132,5 @@ int main(void)
 			blink();
 		}
 	}
-	return 0;
 }
+

@@ -212,8 +212,6 @@ void solarTrack2Axis_step(void)
 			}
 		}
 	}
-		
-	_delay_ms(12); //17 -> slow  12 -> med  7 ->fast
-	
+			
 	#undef AVG_SAMPLES
 }

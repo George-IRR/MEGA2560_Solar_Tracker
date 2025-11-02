@@ -162,6 +162,12 @@
     <Compile Include="drivers\servo\SERVO.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="drivers\timer\timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="drivers\timer\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="drivers\twi\TWI.c">
       <SubType>compile</SubType>
     </Compile>
@@ -211,6 +217,7 @@
   <ItemGroup>
     <Folder Include="drivers" />
     <Folder Include="drivers\adc" />
+    <Folder Include="drivers\timer" />
     <Folder Include="drivers\twi" />
     <Folder Include="drivers\usart" />
     <Folder Include="drivers\servo" />
