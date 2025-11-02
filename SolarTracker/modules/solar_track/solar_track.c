@@ -121,11 +121,11 @@ void solarTrack2Axis_step(void)
 	const int16_t tolerance = 50; // Deadzone threshold
 	
 	// Use #define for array size instead of const
-	#define AVG_SAMPLES 4
+	#define AVG_SAMPLES 8
 	
 	// Circular buffers for averaging
-	static int32_t diff_h_buffer[AVG_SAMPLES] = {0, 0, 0, 0};
-	static int32_t diff_v_buffer[AVG_SAMPLES] = {0, 0, 0, 0};
+	static int32_t diff_h_buffer[AVG_SAMPLES] = {0, 0, 0, 0, 0, 0, 0, 0};
+	static int32_t diff_v_buffer[AVG_SAMPLES] = {0, 0, 0, 0, 0, 0, 0, 0};
 	static uint8_t buffer_index = 0;
 	static uint8_t samples_collected = 0;
 
