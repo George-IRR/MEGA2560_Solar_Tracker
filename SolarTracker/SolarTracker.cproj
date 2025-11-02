@@ -156,12 +156,6 @@
     <Compile Include="drivers\adc\ADC.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="drivers\modules\DHT20.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="drivers\modules\DHT20.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="drivers\servo\SERVO.c">
       <SubType>compile</SubType>
     </Compile>
@@ -195,14 +189,28 @@
     <Compile Include="main.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="modules\DHT20\DHT20.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="modules\DHT20\DHT20.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="modules\scheduler\Scheduler.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="modules\scheduler\Scheduler.h">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="drivers" />
     <Folder Include="drivers\adc" />
-    <Folder Include="drivers\modules" />
     <Folder Include="drivers\twi" />
     <Folder Include="drivers\usart" />
     <Folder Include="drivers\servo" />
+    <Folder Include="modules" />
+    <Folder Include="modules\DHT20" />
+    <Folder Include="modules\scheduler" />
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>

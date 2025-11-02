@@ -4,16 +4,42 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-extern volatile bool dht_request_pending;
+#include "USART.h"
+#define RX1_PAYLOAD_MAX 128
 
-// Public API for the UART packet parser
+// Command types
+typedef enum {
+	CMD_DHT20 = 0x10,
+	CMD_SERVO = 0x11
+} cmd_type_t;
+
+// Response types
+typedef enum {
+	RESP_DHT20 = 0x21,
+	RESP_SERVO = 0x22,
+	RESP_STATUS = 0x23
+} resp_type_t;
+
+// Status codes
+typedef enum {
+	STATUS_OK = 0xFF,
+	STATUS_BUSY = 0xFE,
+	STATUS_INVALID_CMD = 0xFD,
+	STATUS_SERVO_INVALID_ID = 0xFC,
+	STATUS_SERVO_ANGLE_OOR = 0xFB,
+	STATUS_CHECKSUM_ERR = 0xFA
+} status_code_t;
+
+
+
+extern uint8_t task_pending_id;
+extern uint8_t task_pending_type;
+extern uint8_t packet_len;
+extern uint8_t payload_buf[RX1_PAYLOAD_MAX];
+
+// Public API functions
 void process_uart1_bytes(void);
-
-void process_scheduled_work(void);
-
-// Called by the parser when a valid packet is received.
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len);
-
 void send_packet(USART_t *usart, uint8_t type, uint8_t id, uint8_t *payload, uint8_t len);
 
 #endif /* USART_PACKET_H */
