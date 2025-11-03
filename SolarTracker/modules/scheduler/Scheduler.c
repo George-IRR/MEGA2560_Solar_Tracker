@@ -60,7 +60,7 @@ void process_scheduled_work(void)
 			break;
 			
 			case CMD_OVERRIDE:
-				resp_type = CMD_OVERRIDE;
+				resp_type = RESP_OVERRIDE;
 				len = 0x01;
 				status = STATUS_OK;
 				data[0] = status;

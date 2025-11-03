@@ -19,7 +19,7 @@ typedef enum {
 	RESP_DHT20 = 0x21,
 	RESP_SERVO = 0x22,
 	RESP_STATUS = 0x23,
-	RESP_OVERWRITE = 0x24
+	RESP_OVERRIDE = 0x24
 } resp_type_t;
 
 // Status codes
