@@ -10,14 +10,16 @@
 // Command types
 typedef enum {
 	CMD_DHT20 = 0x10,
-	CMD_SERVO = 0x11
+	CMD_SERVO = 0x11,
+	CMD_OVERRIDE = 0x12
 } cmd_type_t;
 
 // Response types
 typedef enum {
 	RESP_DHT20 = 0x21,
 	RESP_SERVO = 0x22,
-	RESP_STATUS = 0x23
+	RESP_STATUS = 0x23,
+	RESP_OVERWRITE = 0x24
 } resp_type_t;
 
 // Status codes
@@ -31,6 +33,7 @@ typedef enum {
 } status_code_t;
 
 
+extern bool track_manual_block; //manually block solar tracking
 
 extern uint8_t task_pending_id;
 extern uint8_t task_pending_type;

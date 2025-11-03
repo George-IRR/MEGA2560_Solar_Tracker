@@ -37,6 +37,7 @@ uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
+bool track_manual_block = true; // default state is to track
 
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
@@ -54,14 +55,21 @@ void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *pa
 		task_pending_usart = true;
 		break;
 
+		case CMD_OVERRIDE: /* Override solar track movement (Example: AA 55 01 12 0A 02 1A 2B 64) */
+		task_pending_type = CMD_OVERRIDE;
+		task_pending_id = packet_id;
+		task_pending_usart = true;
+		track_manual_block = !track_manual_block;
+		break;
+		
 		case 0x20: /* TELEMETRY */
 		printHex(&USART1_regs, 0xFF);
 		printString(&USART1_regs, "\r\n");
 		break;
-
-		default:
-		printString(&USART0_regs, "Unknown packet type\r\n");
-		break;
+		
+// 		default:
+// 		printString(&USART0_regs, "Unknown packet type\r\n");
+// 		break;
 	}
 }
 
@@ -182,7 +190,7 @@ void process_uart1_bytes(void)
 				{
 					uint8_t err_data[1] = {STATUS_CHECKSUM_ERR};
 					send_packet(&USART1_regs, RESP_STATUS, packet_id, err_data, 1);
-					printString(&USART0_regs, "Bad checksum\r\n");
+					//printString(&USART0_regs, "Bad checksum\r\n");
 				}
 				
 				pstate = WAIT_PREAMBLE_1;

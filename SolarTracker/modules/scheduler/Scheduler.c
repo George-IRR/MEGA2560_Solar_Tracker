@@ -19,45 +19,53 @@ void process_scheduled_work(void)
 		switch (task_pending_type)
 		{
 			case CMD_DHT20:
-			resp_type = RESP_DHT20;
-			len = 0x07;
-			getDHT20_Data(data);
+				resp_type = RESP_DHT20;
+				len = 0x07;
+				getDHT20_Data(data);
 			break;
 
 			case CMD_SERVO:
-			resp_type = RESP_STATUS;
-			len = 0x01;
+				resp_type = RESP_STATUS;
+				len = 0x01;
 			
-			if (packet_len < 3)
-			{
-				status = STATUS_INVALID_CMD;
+				if (packet_len < 3)
+				{
+					status = STATUS_INVALID_CMD;
+					data[0] = status;
+					break;
+				}
+			
+				uint8_t servo_id = payload_buf[0];
+				uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
+			
+				if (servo_id > 1)
+				{
+					status = STATUS_SERVO_INVALID_ID;
+				} else if (servo_id == 0 && angle > PWM4_C_regs.max_degree)
+				{
+					status = STATUS_SERVO_ANGLE_OOR;
+				} else if (servo_id == 1 && angle > PWM4_B_regs.max_degree)
+				{
+					status = STATUS_SERVO_ANGLE_OOR;
+				} else
+				{
+					if (servo_id == 0)
+					goToAngle(&PWM4_C_regs, angle);
+					else
+					goToAngle(&PWM4_B_regs, angle);
+					status = STATUS_OK;
+				}
+			
 				data[0] = status;
-				break;
-			}
-			
-			uint8_t servo_id = payload_buf[0];
-			uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
-			
-			if (servo_id > 1)
-			{
-				status = STATUS_SERVO_INVALID_ID;
-			} else if (servo_id == 0 && angle > PWM4_C_regs.max_degree)
-			{
-				status = STATUS_SERVO_ANGLE_OOR;
-			} else if (servo_id == 1 && angle > PWM4_B_regs.max_degree)
-			{
-				status = STATUS_SERVO_ANGLE_OOR;
-			} else
-			{
-				if (servo_id == 0)
-				sendAngle(&PWM4_C_regs, angle);
-				else
-				sendAngle(&PWM4_B_regs, angle);
-				status = STATUS_OK;
-			}
-			
-			data[0] = status;
 			break;
+			
+			case CMD_OVERRIDE:
+				resp_type = CMD_OVERRIDE;
+				len = 0x01;
+				status = STATUS_OK;
+				data[0] = status;
+			break;
+			
 
 			default:
 			task_pending_usart = false;
