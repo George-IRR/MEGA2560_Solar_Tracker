@@ -117,8 +117,7 @@ int main(void)
 	
 	while (1) 
 	{
-		//solarTrack2Axis_step();
-		if (TIFR1 & (1 << OCF1A))
+		if ( ( TIFR1 & (1 << OCF1A) ) && track_manual_block)
 		{
 			TIFR1 = (1 << OCF1A);
 			solarTrack2Axis_step();
