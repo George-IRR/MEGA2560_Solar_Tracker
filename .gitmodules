@@ -1,0 +1,3 @@
+[submodule "SolarTracker/dashboard"]
+	path = SolarTracker/dashboard
+	url = https://github.com/George-IRR/SolarTracker-Dashboard
