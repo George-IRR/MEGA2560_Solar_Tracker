@@ -5,7 +5,7 @@
 
 
 volatile bool task_pending_usart = false;
-bool track_manual_block = true; // default state is to track
+bool track_manual_block = false; // default state is to track
 
 void process_scheduled_work(void)
 {
@@ -28,37 +28,45 @@ void process_scheduled_work(void)
 			case CMD_SERVO:
 				resp_type = RESP_STATUS;
 				len = 0x01;
-			
-				if (packet_len < 3)
-				{
-					status = STATUS_INVALID_CMD;
-					data[0] = status;
-					break;
-				}
-			
-				uint8_t servo_id = payload_buf[0];
-				uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
-			
-				if (servo_id > 1)
-				{
-					status = STATUS_SERVO_INVALID_ID;
-				} else if (servo_id == 0 && angle > PWM4_C_regs.max_degree)
-				{
-					status = STATUS_SERVO_ANGLE_OOR;
-				} else if (servo_id == 1 && angle > PWM4_B_regs.max_degree)
-				{
-					status = STATUS_SERVO_ANGLE_OOR;
-				} else
-				{
-					if (servo_id == 0)
-					goToAngle(&PWM4_C_regs, angle);
-					else
-					goToAngle(&PWM4_B_regs, angle);
-					status = STATUS_OK;
-				}
-			
-				data[0] = status;
-			break;
+            
+                // reject if manual override is not active
+                if (!track_manual_block)
+                {
+                    status = STATUS_INVALID_CMD; // or create a new STATUS_MANUAL_NOT_ACTIVE
+                    data[0] = status;
+                    break;
+                }
+            
+                if (packet_len < 3)
+                {
+                    status = STATUS_INVALID_CMD;
+                    data[0] = status;
+                    break;
+                }
+            
+                uint8_t servo_id = payload_buf[0];
+                uint16_t angle = (payload_buf[1] << 8) | payload_buf[2];
+            
+                if (servo_id > 1)
+                {
+                    status = STATUS_SERVO_INVALID_ID;
+                } else if (servo_id == 0 && angle > PWM4_C_regs.max_degree)
+                {
+                    status = STATUS_SERVO_ANGLE_OOR;
+                } else if (servo_id == 1 && angle > PWM4_B_regs.max_degree)
+                {
+                    status = STATUS_SERVO_ANGLE_OOR;
+                } else
+                {
+                    if (servo_id == 0)
+                    goToAngle(&PWM4_C_regs, angle);
+                    else
+                    goToAngle(&PWM4_B_regs, angle);
+                    status = STATUS_OK;
+                }
+            
+                data[0] = status;
+            break;
 			
 			case CMD_OVERRIDE:
 				resp_type = RESP_OVERRIDE;
@@ -89,7 +97,7 @@ void process_scheduled_work(void)
 					}
 				} else 
 				{
-				// no payload tag — toggle
+				// no payload tag toggle
 				track_manual_block = !track_manual_block;
 				}
 

@@ -115,15 +115,15 @@ int main(void)
 	printString(&USART1_regs,"Calibration Completed \n");
 	Timer1_Init_Polling();
 	
-	while (1) 
-	{
-		if ( ( TIFR1 & (1 << OCF1A) ) && track_manual_block)
-		{
-			TIFR1 = (1 << OCF1A);
-			solarTrack2Axis_step();
-		}
-
-		process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82
+    while (1) 
+    {
+        if ( ( TIFR1 & (1 << OCF1A) ) && !track_manual_block)
+        {
+            TIFR1 = (1 << OCF1A);
+            solarTrack2Axis_step();
+        }
+        
+        process_uart1_bytes(); //example AA 55 01 30 0A 02 1A 2B 82	
 		process_scheduled_work();
 		if (uart1_clear_overflow_flag())
 		{
