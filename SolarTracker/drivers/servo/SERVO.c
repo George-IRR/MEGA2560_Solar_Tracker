@@ -80,8 +80,8 @@ void goToAngle(PWM4_t *pwm_pin, uint16_t angle)
 	{
 		for (int16_t i = (int16_t)pwm_pin->current_angle; i <= (int16_t)angle; i++)
 		{
-			printInt(&USART1_regs, (uint16_t)i);  // Print the actual angle being sent
-			printString(&USART1_regs, "\n");
+			//printInt(&USART1_regs, (uint16_t)i);  // Print the actual angle being sent
+			//printString(&USART1_regs, "\n");
 			sendAngle(pwm_pin, (uint16_t)i);
 			_delay_ms(20);
 		}
