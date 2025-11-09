@@ -37,7 +37,6 @@ uint8_t uart1_available(void);
 int uart1_read(void);
 bool uart1_clear_overflow_flag(void);
 
-bool track_manual_block = true; // default state is to track
 
 void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *payload_buf, uint8_t packet_len)
 {
@@ -59,7 +58,12 @@ void handle_packet(uint8_t version, uint8_t type, uint8_t packet_id, uint8_t *pa
 		task_pending_type = CMD_OVERRIDE;
 		task_pending_id = packet_id;
 		task_pending_usart = true;
-		track_manual_block = !track_manual_block;
+		break;
+		
+		case CMD_SOLARTRACK:
+		task_pending_type = CMD_SOLARTRACK;
+		task_pending_id = packet_id;
+		task_pending_usart = true;
 		break;
 		
 		case 0x20: /* TELEMETRY */

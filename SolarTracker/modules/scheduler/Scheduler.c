@@ -5,6 +5,7 @@
 
 
 volatile bool task_pending_usart = false;
+bool track_manual_block = true; // default state is to track
 
 void process_scheduled_work(void)
 {
@@ -61,12 +62,45 @@ void process_scheduled_work(void)
 			
 			case CMD_OVERRIDE:
 				resp_type = RESP_OVERRIDE;
-				len = 0x01;
 				status = STATUS_OK;
-				data[0] = status;
+
+				if (packet_len >= 1 && payload_buf[0] == DATA_OVERRIDE_CTRL) 
+				{
+					// expect payload_len >= 2 for explicit command
+					if (packet_len >= 2) 
+					{
+						uint8_t ctrl = payload_buf[1];
+						if (ctrl == OV_CTRL_TOGGLE) 
+						{
+							track_manual_block = !track_manual_block;
+						} else if (ctrl == OV_CTRL_SET_ON) 
+						{
+							track_manual_block = true;
+						} else if (ctrl == OV_CTRL_SET_OFF) 
+						{
+							track_manual_block = false;
+						} else 
+						{
+							status = STATUS_INVALID_CMD;
+						}
+					} else 
+					{
+					status = STATUS_INVALID_CMD; // malformed payload
+					}
+				} else 
+				{
+				// no payload tag — toggle
+				track_manual_block = !track_manual_block;
+				}
+
+				// reply with current state (0 = tracking allowed, 1 = manual block)
+				len = 1;
+				data[0] = track_manual_block ? 1 : 0;
+
+				task_pending_type = CMD_OVERRIDE;
+				task_pending_id = id;
 			break;
 			
-
 			default:
 			task_pending_usart = false;
 			return;
